@@ -3,6 +3,7 @@ circuits/proofs
 circuits/Prover.toml
 circuits/Verifier.toml
 circuits/target
+circuits/contract
 crs
 
 # node build artifacts
