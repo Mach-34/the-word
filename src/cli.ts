@@ -54,7 +54,7 @@ async function proveCommand(title: string, proofPath: string) {
         console.log(`${chalk.red("ERROR: ")} a song title cannot be more than 200 characters long`);
         return;
     }
-    let preimage = convertTitleToFelts(title);
+    const preimage = convertTitleToFelts(title);
     
     // check and format proof filepath
     const directory = checkProofPathDir(proofPath);
@@ -69,13 +69,15 @@ async function proveCommand(title: string, proofPath: string) {
     const { bb, composer } = await init(acirDecompressed);
 
     // compute the witness for the proof
-    let witness = await generateWitness(preimage, acir);
+    const witness = await generateWitness(preimage, acir);
     // generate the proof
     const proof = await prove(bb, composer, acirDecompressed, witness);
 
     // save proof to file
+    const hash = `0x${Buffer.from(proof.slice(0, 32)).toString('hex')}`;
     fs.writeFileSync(filepath, proof);
-    console.log(`Proof of knowledge of song title ${chalk.cyan(`"${title}"`)} saved to ${chalk.green(filepath)}`);
+    console.log(`Proved secret song title ${chalk.cyan(`"${title}"`)} creats public hash ${chalk.cyan(`"${hash}"`)}`);
+    console.log(`Saved to proof to ${chalk.green(filepath)}`);
 }
 
 /**
@@ -114,7 +116,7 @@ async function verifyCommand(proofPath: string, hash: string | undefined) {
     const { bb, composer } = await init(acirDecompressed);
     
     // verify the proof:
-    let verified = await verify(bb, composer, acirDecompressed, proof);
+    const verified = await verify(bb, composer, acirDecompressed, proof);
     if (verified) {
         console.log(`${chalk.green("VERIFIED")} proof of knowledge of song hash ${chalk.cyan(`0x${hash}`)}`);
     } else {
