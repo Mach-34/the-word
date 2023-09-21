@@ -1,15 +1,33 @@
 import { executeCircuit, compressWitness, WitnessMap } from '@noir-lang/acvm_js';
-import { Crs, RawBuffer, BarretenbergApiAsync } from '@aztec/bb.js/dest/node/index.js';
+import {
+    Crs,
+    RawBuffer,
+    newBarretenbergApiAsync,
+    BarretenbergApiAsync
+} from '@aztec/bb.js/dest/node/index.js';
 import { Ptr } from "@aztec/bb.js/dest/node/types/ptr.js";
 import circuit from "../circuit.json" assert { type: "json" };
 import { decompressSync } from 'fflate';
 
 /**
- * Unmarshalls and returns ACIR bytecode for the hash circuit
- * @return acir - the serialized and compressed ACIR bytecode
- * @return acirDecompressed - the decompressed serialized ACIR bytecode
+ * Initializes the proving engine
+ * 
+ * @param acir - the decompressed ACIR bytecode for the hash circuit
+ * @return bb - the initialized Barretenberg API worker
+ * @return composer - the initialized Barretenberg proof composer
  */
-export function getAcir(): { acir: Buffer, acirDecompressed: Uint8Array } {
+async function init(acir: Uint8Array) : Promise<{ bb: BarretenbergApiAsync, composer: Ptr }> {
+    const bb = await newBarretenbergApiAsync(4);
+    const composer = await getComposer(bb, acir);
+    return { bb, composer };
+}
+
+/**
+ * Unmarshalls and returns ACIR bytecode for the hash circuit
+ * @return acir - the and compressed ACIR bytecode
+ * @return acirDecompressed - the decompressed ACIR bytecode
+ */
+function getAcir(): { acir: Buffer, acirDecompressed: Uint8Array } {
     const acir = Buffer.from(circuit.bytecode, 'base64');
     const acirDecompressed = decompressSync(acir);
     return { acir, acirDecompressed };
@@ -18,7 +36,7 @@ export function getAcir(): { acir: Buffer, acirDecompressed: Uint8Array } {
 /**
  * Generates a proof composer for Noir UltraPlonk proofs
  * @param bb - initialized Barretenberg API worker
- * @param acir - serialized ACIR bytecode for the hash circuit
+ * @param acir - ACIR bytecode for the hash circuit
  * @returns - barretenberg proof composer
  */
 async function getComposer(bb: BarretenbergApiAsync, acir: Uint8Array): Promise<Ptr> {
@@ -33,8 +51,8 @@ async function getComposer(bb: BarretenbergApiAsync, acir: Uint8Array): Promise<
 /**
  * Computes the witness for a proof
  * @param input - the formatted field elements of the song title as 32-byte hex strings
- * @param acirBuffer - the serialized ACIR bytecode for the hash circuit
- * @return - the compressed, serialized witness map
+ * @param acirBuffer - the ACIR bytecode for the hash circuit
+ * @return - the serialized witness map
  */
 async function generateWitness(input: Array<string>, acirBuffer: Buffer): Promise<Uint8Array> {
     // set initial witness map
@@ -94,6 +112,8 @@ async function verify(
 
 export {
     circuit,
+    init,
+    getAcir,
     getComposer,
     generateWitness,
     prove,

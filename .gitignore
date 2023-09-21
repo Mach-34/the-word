@@ -5,8 +5,14 @@ circuits/Verifier.toml
 circuits/target
 crs
 
+# node build artifacts
+dest
+
 # node dependencies
 node_modules
 
 # environment variables
 .env
+
+# errors & logs
+yarn-error.log
