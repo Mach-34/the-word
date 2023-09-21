@@ -1,0 +1,12 @@
+# noir artifacts
+circuits/proofs
+circuits/Prover.toml
+circuits/Verifier.toml
+circuits/target
+crs
+
+# node dependencies
+node_modules
+
+# environment variables
+.env

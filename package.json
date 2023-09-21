@@ -1,0 +1,19 @@
+{
+  "name": "noir-hash-cli",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "noir:install": "./scripts/install-noir.sh",
+    "noir:compile": "./scripts/compile-circuit.sh"
+  },
+  "dependencies": {
+    "@aztec/bb.js": "0.3.6",
+    "@noir-lang/acvm_js": "https://git@github.com/noir-lang/acvm-simulator-wasm.git",
+    "ethers": "^6.7.1",
+    "fflate": "^0.8.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
