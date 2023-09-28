@@ -7,9 +7,13 @@ dest
 
 # node dependencies
 node_modules
+package-lock.json
 
 # environment variables
 .env
 
 # errors & logs
 yarn-error.log
+
+# runtime artifacts
+the_word_proof.json

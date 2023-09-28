@@ -1,4 +1,4 @@
-import { groth16 } from "snarkjs";
+import { groth16, Groth16Proof } from "snarkjs";
 import { buildPoseidon, Poseidon } from "circomlibjs";
 import { convertTitleToFelts } from "./words.js";
 import vkey from "../artifacts/verifier.json" assert { type: "json" };
@@ -45,4 +45,5 @@ class CircomEngine {
 export {
     CircomEngine,
     CircuitInput,
+    Groth16Proof
 }

@@ -1,132 +1,120 @@
-// #!/usr/bin/env node --no-warnings
-// import {
-//     getAcir,
-//     init,
-//     convertTitleToFelts,
-//     generateWitness,
-//     prove,
-//     verify,
-//     checkProofPathDir,
-//     checkProofPath
-// } from "./index.js";
-// import figlet from 'figlet';
-// import { Command } from "commander";
-// import chalk from "chalk";
-// import fs from "fs";
+#!/usr/bin/env node --no-warnings
+import {
+    CircomEngine,
+    CircuitInput,
+    checkProofPathDir,
+    checkProofPath,
+    getProof
+} from "./index.js";
+import figlet from 'figlet';
+import { Command } from "commander";
+import chalk from "chalk";
+import fs from "fs";
 
+async function main() {
+    // log header
+    console.log(figlet.textSync('The Word'));
+    // command options
+    const program = new Command();
+    program
+        .version("0.1.0")
+        .description("A game to see how big a secret can become before it's too big to keep")
+        .option("-t, --title <song title>", "The title of the song to hash, in quotes (e.g. \"Greese\"")
+        .option("-p, --proof <path-to-proof-output>", "Generate a proof of knowledge of the hash of a song in the given directory")
+        .option("-v, --verify <path-to-saved-proof>", "Verify a proof of knowledge of the hash of a song")
+        .option("-ha, --hash <song hash>", "Optional hash of song to verify (can be taken from proof file)")
+        .parse(process.argv);
+    const options = program.opts();
+    // handle commands
+    if (process.argv.length < 3) {
+        program.help()
+    } else if (options.proof) {
+        if (!options.title) {
+            console.log(`${chalk.red("ERROR: ")}must provide a song title to hash with ${chalk.green("-t \"title\"")} when proving!`);
+        } else {
+            await proveCommand(options.title, options.proof);
+        }
+    } else if (options.verify) {
+        if (!options.hash) {
+            console.log(`${chalk.red("ERROR: ")}must provide a song hash to verify with ${chalk.green("-ha \"hash\"")} when verifying!`);
+        } else {
+            await verifyCommand(options.verify, options.hash);
+        }
+    }
+}
 
-// async function main() {
-//     // log header
-//     console.log(figlet.textSync('The Word'));
-//     // command options
-//     const program = new Command();
-//     program
-//         .version("0.1.0")
-//         .description("A game to see how big a secret can become before it's too big to keep")
-//         .option("-t, --title <song title>", "The title of the song to hash, in quotes (e.g. \"Greese\"")
-//         .option("-p, --proof <path-to-proof-output>", "Generate a proof of knowledge of the hash of a song in the given directory")
-//         .option("-v, --verify <path-to-saved-proof>", "Verify a proof of knowledge of the hash of a song")
-//         .option("-ha, --hash <song hash>", "Optional hash of song to verify (can be taken from proof file)")
-//         .parse(process.argv);
-//     const options = program.opts();
-//     // handle commands
-//     if (process.argv.length < 3) {
-//         program.help()
-//     } else if (options.proof) {
-//         if (!options.title) {
-//             console.log(`${chalk.red("ERROR: ")}must provide a song title to hash with ${chalk.green("-t \"title\"")} when proving!`);
-//         } else {
-//             await proveCommand(options.title, options.proof);
-//         }
-//     } else if (options.verify) {
-//         await verifyCommand(options.verify, options.hash);
-//     }
-// }
-
-// /**
-//  * Command that handles proving knowledge of the preimage song title that creates a hash
-//  * @param word - the word to hash
-//  * @param proofPath - the path to save the computed proof to
-//  */
-// async function proveCommand(title: string, proofPath: string) {
-//     // convert inputted song title to field elements
-//     if (title.length > 200) {
-//         console.log(`${chalk.red("ERROR: ")} a song title cannot be more than 200 characters long`);
-//         return;
-//     }
-//     const preimage = convertTitleToFelts(title);
+/**
+ * Command that handles proving knowledge of the preimage song title that creates a hash
+ * @param word - the word to hash
+ * @param proofPath - the path to save the computed proof to
+ */
+async function proveCommand(title: string, proofPath: string) {
+    // convert inputted song title to field elements
+    if (title.length > 200) {
+        console.log(`${chalk.red("ERROR: ")} a song title cannot be more than 200 characters long`);
+        return;
+    }
     
-//     // check and format proof filepath
-//     const directory = checkProofPathDir(proofPath);
-//     if (directory == "") {
-//         console.log(`${chalk.red("ERROR: ")} ${directory} is not a valid directory`);
-//         return;
-//     }
-//     const filepath = `${directory}/song_hash.proof`;
+    // check and format proof filepath
+    const directory = checkProofPathDir(proofPath);
+    if (directory == "") {
+        console.log(`${chalk.red("ERROR: ")} ${directory} is not a valid directory`);
+        return;
+    }
+    const filepath = `${directory}/the_word_proof.json`;
 
-//     // get circuit artifacts & initialize proving engine
-//     const { acir, acirDecompressed } = getAcir();
-//     const { bb, composer } = await init(acirDecompressed);
+    // initialize proving engine
+    const engine = await CircomEngine.init();
 
-//     // compute the witness for the proof
-//     const witness = await generateWitness(preimage, acir);
-//     // generate the proof
-//     const proof = await prove(bb, composer, acirDecompressed, witness);
+    // chunk the input
+    const input: CircuitInput = { phrase: engine.chunk(title) };
 
-//     // save proof to file
-//     const hash = `0x${Buffer.from(proof.slice(0, 32)).toString('hex')}`;
-//     fs.writeFileSync(filepath, proof);
-//     console.log(`Proved secret song title ${chalk.cyan(`"${title}"`)} creats public hash ${chalk.cyan(`"${hash}"`)}`);
-//     console.log(`Saved to proof to ${chalk.green(filepath)}`);
-// }
+    // generate proof
+    const { proof, publicSignals } = await engine.prove(input);
+    const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
 
-// /**
-//  * Verify a given proof of knowledge of a song title hash
-//  * @param proofPath - the saved file containing the proof
-//  * @param hash - the hash of the song title to verify (optional, can be taken from proof file)
-//  */
-// async function verifyCommand(proofPath: string, hash: string | undefined) {
-//     // check if proof path is valid
-//     if (!checkProofPath(proofPath)) {
-//         console.log(`${chalk.red("ERROR: ")} ${proofPath} is not a valid proof file (be data file type with extension .proof)`);
-//         return;
-//     }
-//     // read the proof from the file
-//     let proof = new Uint8Array(fs.readFileSync(proofPath));
+    // save proof to file
+    fs.writeFileSync(filepath, JSON.stringify(proof, null, 2));
+    console.log(`Proved secret song title ${chalk.cyan(`"${title}"`)} creats public hash ${chalk.cyan(`"${hash}"`)}`);
+    console.log(`Saved to proof to ${chalk.green(filepath)}`);
+}
 
-//     // optionally slice in the hash
-//     if (hash) {
-//         // remove 0x from front of hash if it exists
-//         if (hash.slice(0, 2) == "0x") {
-//             hash = hash.slice(2);
-//         }
-//         // check if hash length is valid
-//         if (hash.length != 64) {
-//             console.log(`${chalk.red("ERROR: ")} ${hash} is not a valid hash (must be 32 bytes)`);
-//             return;
-//         }
-//         // slice in the hash
-//         proof = new Uint8Array([...proof.slice(32), ...new Uint8Array(Buffer.from(hash, 'hex'))]);
-//     } else {
-//         hash = Buffer.from(proof.slice(0, 32)).toString('hex');
-//     }
-    
-//     // get circuit artifacts & initialize proving engine
-//     const { acirDecompressed } = getAcir();
-//     const { bb, composer } = await init(acirDecompressed);
-    
-//     // verify the proof:
-//     const verified = await verify(bb, composer, acirDecompressed, proof);
-//     if (verified) {
-//         console.log(`${chalk.green("VERIFIED")} proof of knowledge of song hash ${chalk.cyan(`0x${hash}`)}`);
-//     } else {
-//         console.log(`${chalk.red("COULD NOT VERIFY")} proof of knowledge of song hash ${chalk.cyan(hash)}`);
-//     }
-// }
+/**
+ * Verify a given proof of knowledge of a song title hash
+ * @param proofPath - the saved file containing the proof
+ * @param hash - the hash of the song title to verify (optional, can be taken from proof file)
+ */
+async function verifyCommand(proofPath: string, hash: string) {
+    // check if proof path is valid
+    if (!checkProofPath(proofPath)) {
+        console.log(`${chalk.red("ERROR: ")} ${proofPath} does not point to a json file!`);
+        return;
+    }
 
-// main()
-//     .then(() => { process.exit(0); })
-//     .catch((err) => {
-//         console.error(err);
-//         process.exit(1);
-//     });
+    // read the proof from the file
+    const proof = (await getProof(proofPath)).default;
+
+    // marshall hash from arguments
+    if (hash.slice(0, 2) != "0x") {
+        hash = `0x${hash}`;
+    }
+    let publicSignals = [BigInt(hash)];
+
+    // initialize proving engine
+    const engine = await CircomEngine.init();
+
+    // verify the proof
+    const verified = await engine.verify(proof, publicSignals);
+    if (verified) {
+        console.log(`${chalk.green("VERIFIED")} proof of knowledge of song hash ${chalk.cyan(`0x${hash}`)}`);
+    } else {
+        console.log(`${chalk.red("COULD NOT VERIFY")} proof of knowledge of song hash ${chalk.cyan(hash)}`);
+    }
+}
+
+main()
+    .then(() => { process.exit(0); })
+    .catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });

@@ -1,9 +1,11 @@
-import { CircomEngine, CircuitInput } from "./utils/circom.js";
-import { checkProofPathDir, checkProofPath } from "./utils/fs.js";
+import { CircomEngine, CircuitInput, Groth16Proof } from "./utils/circom.js";
+import { checkProofPathDir, checkProofPath, getProof } from "./utils/fs.js";
 
 export {
     CircomEngine,
     CircuitInput,
+    Groth16Proof,
     checkProofPathDir,
-    checkProofPath
+    checkProofPath,
+    getProof,
 };
