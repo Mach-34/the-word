@@ -1,7 +1,0 @@
-[package]
-name = "circuits"
-type = "bin"
-authors = [""]
-compiler_version = "0.12.0"
-
-[dependencies]

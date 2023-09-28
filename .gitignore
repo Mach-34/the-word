@@ -1,10 +1,6 @@
-# noir artifacts
-circuits/proofs
-circuits/Prover.toml
-circuits/Verifier.toml
-circuits/target
-circuits/contract
-crs
+# circom artifacts
+circuits/crs
+circuits/zkey
 
 # node build artifacts
 dest
