@@ -1,19 +1,19 @@
-# noir artifacts
-circuits/proofs
-circuits/Prover.toml
-circuits/Verifier.toml
-circuits/target
-circuits/contract
-crs
+# circom artifacts
+circuits/crs
+circuits/zkey
 
 # node build artifacts
 dest
 
 # node dependencies
 node_modules
+package-lock.json
 
 # environment variables
 .env
 
 # errors & logs
 yarn-error.log
+
+# runtime artifacts
+the_word_proof.json

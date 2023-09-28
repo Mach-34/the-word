@@ -1,37 +1,27 @@
-import {
-    init,
-    convertTitleToFelts,
-    generateWitness,
-    getAcir,
-    prove,
-    verify,
-} from "./index.js";
+import { CircomEngine, CircuitInput } from "./index.js";
 
 async function main() {
 
-    // init proving engine
-    const { acir, acirDecompressed } = getAcir();
-    const { bb, composer } = await init(acirDecompressed);
+    // Initialize the proving engine
+    const engine = await CircomEngine.init();
 
-    // get input to hash
+    // Get input to hash
     const test_word = "this is a song, I prommise it is a song. it might be long, but what are you going to do about it?";
-    const test_felts = convertTitleToFelts(test_word);
+    const test_felts = engine.chunk(test_word);
 
-    // get the witness
-    let witness = await generateWitness(test_felts, acir);
-    
-    // generate a proof
-    const proof = await prove(bb, composer, acirDecompressed, witness);
+    // Compute hash of the secret phrase
+    const hash = await engine.hash(test_felts);
 
-    // get the public output
-    let songHash = Buffer.from(proof.slice(0, 32)).toString('hex');
+    // Build input struct
+    const input: CircuitInput = { phrase: test_felts };
 
-    // verify the proof
-    const verified = await verify(bb, composer, acirDecompressed, proof);
+    // Compute proof
+    const { proof } = await engine.prove(input);
 
-    console.log(`song hash: ${songHash}`);
-    console.log(`Proof: ${Buffer.from(proof).toString('hex')}`);
-    console.log(`Verified: ${verified}`);
+    // Verify proof
+    let verified = await engine.verify(proof, [hash]);
+
+    console.log("Proof verifier: ", verified);
 }
 
 main()

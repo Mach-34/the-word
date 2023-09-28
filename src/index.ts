@@ -1,16 +1,11 @@
-import { convertTitleToFelts } from "./utils/words.js";
-import { init, generateWitness, getComposer, getAcir, prove, verify, circuit } from "./utils/noir.js";
-import { checkProofPathDir, checkProofPath } from "./utils/fs.js";
+import { CircomEngine, CircuitInput, Groth16Proof } from "./utils/circom.js";
+import { checkProofPathDir, checkProofPath, getProof } from "./utils/fs.js";
 
 export {
-    circuit,
-    init,
-    generateWitness,
-    getComposer,
-    getAcir,
-    prove,
-    verify,
-    convertTitleToFelts,
+    CircomEngine,
+    CircuitInput,
+    Groth16Proof,
     checkProofPathDir,
-    checkProofPath
+    checkProofPath,
+    getProof,
 };
