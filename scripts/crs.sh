@@ -56,7 +56,7 @@ yarn snarkjs powersoftau verify circuits/crs/pot10_final.ptau \
     &> /dev/null
 
 # Move ptau to artifacts folder
-mv circuits/crs/pot10_final.ptau circuits/artifacts/pot10_final.ptau \
+mv circuits/crs/pot10_final.ptau src/artifacts/pot10_final.ptau \
     &> /dev/null
 
-echo -e "${GREEN}crs.sh${NC}| generated Powers of Tau file at ${CYAN}$(pwd)/circuits/artifacts/pot10_final.ptau${NC}"
+echo -e "${GREEN}crs.sh${NC}| generated Powers of Tau file at ${CYAN}$(pwd)/src/artifacts/pot10_final.ptau${NC}"

@@ -10,18 +10,18 @@ echo -e "${GREEN}compile-circuit.sh${NC}| compiling r1cs proving and verifying a
 [ -d circuits/zkey ] || mkdir circuits/zkey
 
 # compile circuit
-circom circuits/the_word.circom -o circuits/artifacts --r1cs --wasm &> /dev/null
+circom circuits/the_word.circom -o src/artifacts --r1cs --wasm &> /dev/null
 
 # Setup
 yarn snarkjs groth16 setup \
-    circuits/artifacts/the_word.r1cs \
-    circuits/artifacts/pot10_final.ptau \
-    circuits/artifacts/the_word.zkey &> /dev/null
+    src/artifacts/the_word.r1cs \
+    src/artifacts/pot10_final.ptau \
+    src/artifacts/the_word.zkey &> /dev/null
 
 # Reference zkey
 yarn snarkjs groth16 setup \
-    circuits/artifacts/the_word.r1cs \
-    circuits/artifacts/pot10_final.ptau \
+    src/artifacts/the_word.r1cs \
+    src/artifacts/pot10_final.ptau \
     circuits/zkey/the_word_0000.zkey \
     &> /dev/null
 
@@ -46,30 +46,35 @@ yarn snarkjs zkey contribute \
 
 # Verify zkey
 yarn snarkjs zkey verify \
-    circuits/artifacts/the_word.r1cs \
-    circuits/artifacts/pot10_final.ptau \
+    src/artifacts/the_word.r1cs \
+    src/artifacts/pot10_final.ptau \
     circuits/zkey/the_word_0003.zkey \
     &> /dev/null
 
 # Apply random beacon
 yarn snarkjs zkey beacon circuits/zkey/the_word_0003.zkey \
-    circuits/artifacts/the_word.zkey \
+    src/artifacts/the_word.zkey \
     0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 10 -n="the_word FinalBeacon phase2" \
     &> /dev/null
 
 # Verify final zkey
 yarn snarkjs zkey verify \
-    circuits/artifacts/the_word.r1cs \
-    circuits/artifacts/pot10_final.ptau \
-    circuits/artifacts/the_word.zkey \
+    src/artifacts/the_word.r1cs \
+    src/artifacts/pot10_final.ptau \
+    src/artifacts/the_word.zkey \
     &> /dev/null
 
 # Export zkey to json
 yarn snarkjs zkey export verificationkey \
-    circuits/artifacts/the_word.zkey \
-    circuits/artifacts/verifier.json \
+    src/artifacts/the_word.zkey \
+    src/artifacts/verifier.json \
     &> /dev/null
 
+# Remove unnecessary js proving artifacts
+mv src/artifacts/the_word_js/the_word.wasm src/artifacts/the_word.wasm
+rm -rf src/artifacts/the_word_js
+rm src/artifacts/the_word.r1cs
+
 echo -e "${GREEN}compile-circuit.sh${NC}| successfully built proving/ verifying artifacts for the_word!"
-echo -e "${GREEN}compile-circuit.sh${NC}| artifacts located at ${CYAN}$(pwd)/circuits/artifacts${NC}"
+echo -e "${GREEN}compile-circuit.sh${NC}| artifacts located at ${CYAN}$(pwd)/src/artifacts${NC}"
 
