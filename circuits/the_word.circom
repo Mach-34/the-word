@@ -1,6 +1,6 @@
 pragma circom 2.1.6;
 
-include "../node_modules/circomlib/circuits/poseidon.circom";
+include "node_modules/circomlib/circuits/poseidon.circom";
 
 template the_word(num_felts) {
     
@@ -16,4 +16,4 @@ template the_word(num_felts) {
     hash <== hasher.out;
 }
 
-component main = the_word(7);
+component main = the_word(6);

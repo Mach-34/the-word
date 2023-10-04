@@ -22,7 +22,7 @@ export function convertTitleToFelts(title: string) : Array<bigint> {
         } else if (end > title.length) {
             // if end is out of bounds, pad front with 0's
             const partial = Buffer.from(title.slice(start), 'utf-8');
-            chunk = Buffer.concat([Buffer.alloc(31 - partial.length), partial]);
+            chunk = Buffer.concat([partial, Buffer.alloc(31 - partial.length)]);
         } else {
             // chunk 31 bytes from the title string
             chunk = Buffer.from(title.slice(start, end), 'utf-8');

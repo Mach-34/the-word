@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+      "outDir": "cli/dest",
+      "rootDir": "cli/src",
+      "target": "es2020",
+      "lib": ["dom", "esnext", "es2017.object"],
+      "module": "NodeNext",
+      "moduleResolution": "NodeNext",
+      "strict": true,
+      "declaration": true,
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true,
+      "downlevelIteration": true,
+      "inlineSourceMap": true,
+      "declarationMap": true,
+      "importHelpers": true,
+      "resolveJsonModule": true,
+      "skipLibCheck": true,
+    },
+    "references": [],
+    "include": ["cli/src"]
+  }
