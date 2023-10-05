@@ -8,14 +8,14 @@ const UserSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    whispers: {
+    whispers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Round',
-    },
-    shouts: {
+    }],
+    shouts: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Round',
-    }
+    }]
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -27,6 +27,9 @@ const RoundSchema = new mongoose.Schema({
         type: Number,
         required: true,
         unique: true
+    },
+    secret: {
+        type: String,
     },
     commitment: {
         type: String,
