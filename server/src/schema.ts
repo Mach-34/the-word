@@ -49,6 +49,10 @@ const RoundSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     },
+    active: {
+        type: Boolean,
+        default: true,
+    }
 });
 const Round = mongoose.model('Round', RoundSchema);
 
