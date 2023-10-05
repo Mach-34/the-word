@@ -41,8 +41,8 @@ contract TheWord {
     mapping(uint256 => Round) public rounds;
 
     /// EVENTS ///
-    event NewRound(uint256 round, uint256 commitment, uint256 prize);
-    event Shouted(uint256 round, address shoutedBy);
+    event NewRound(uint256 indexed round, uint256 indexed commitment, uint256 indexed prize);
+    event Shouted(uint256 indexed round, address indexed shoutedBy);
 
     /// MODIFIERS ///
 

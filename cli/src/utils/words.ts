@@ -8,11 +8,11 @@
  */
 export function convertTitleToFelts(title: string) : Array<bigint> {
     // check length of title does not exceed spotify's requirements
-    if (title.length > 200)
-        throw Error('title too long: must be <= 200 characters');
+    if (title.length > 180)
+        throw Error('title too long: must be <= 180 characters');
     // convert to chunks of bytes
     let chunks: bigint[] = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 6; i++) {
         const start = i * 31;
         const end = (i + 1) * 31;
         let chunk: Buffer;

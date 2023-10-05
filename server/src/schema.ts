@@ -2,9 +2,23 @@ import mongoose from 'mongoose';
 
 /// USERS ///
 
+const UserSchema = new mongoose.Schema({
+    pubkey: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    whispers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Round',
+    }],
+    shouts: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Round',
+    }]
+});
 
-
-const UserModel = mongoose.model('User', UserSchema);
+const User = mongoose.model('User', UserSchema);
 
 /// ROUNDS
 
@@ -14,39 +28,35 @@ const RoundSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    createdBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    hint: {
+    secret: {
         type: String,
-        required: true
     },
-    hash: {
+    commitment: {
         type: String,
         required: true,
     },
-    created: {
-        type: Date,
-        default: Date.now,
-        required: true
+    hint: {
+        type: String,
+        required: true,
     },
-    ended: {
-        type: Date,
-        required: false
+    prize: {
+        type: Number,
+        default: 0,
+        required: true,
     },
-    whipsers: {
-        type: [mongoose.Schema.Types.ObjectId],
+    whisperers: [{
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: false
-    },
+    }],
     shoutedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: false
+    },
+    active: {
+        type: Boolean,
+        default: true,
     }
 });
-const RoundModel = mongoose.model('Round', RoundSchema);
+const Round = mongoose.model('Round', RoundSchema);
 
-export { UserModel, RoundModel };
+export { User, Round };
