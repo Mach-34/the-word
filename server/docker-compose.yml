@@ -1,5 +1,11 @@
 version: '3'
 services:
+  ethereum:
+    restart: on-failure
+    image: ghcr.io/foundry-rs/foundry:v1.0.0
+    command: '"anvil -p 8545 --host 0.0.0.0 --chain-id 31337"'
+    ports:
+      - '8545:8545'
   mongodb:
     restart: on-failure
     image: mongo:6-jammy

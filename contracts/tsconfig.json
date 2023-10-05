@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-      "rootDirs": ["src", "test"],
+      "rootDirs": ["src", "test", "scripts"],
       "target": "es2020",
       "lib": ["dom", "esnext", "es2017.object"],
       "module": "NodeNext",
@@ -17,5 +17,5 @@
       "skipLibCheck": true,
     },
     "references": [],
-    "include": ["src", "test", "./hardhat.config.ts"],
+    "include": ["src", "test", "./hardhat.config.ts", "scripts"],
   }

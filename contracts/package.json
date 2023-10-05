@@ -6,7 +6,8 @@
   "scripts": {
     "copy-artifacts": "cp -r ../circuits/artifacts test && mv test/artifacts/Verifier.sol contracts",
     "postinstall": "yarn copy-artifacts",
-    "test": "yarn hardhat test"
+    "test": "yarn hardhat test",
+    "deploy": "yarn hardhat run scripts/deploy.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",

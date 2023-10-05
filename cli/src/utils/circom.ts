@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { groth16, Groth16Proof } from "snarkjs";
 import { buildPoseidon, Poseidon } from "circomlibjs";
 import { convertTitleToFelts } from "./words.js";
