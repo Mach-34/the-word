@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "./Verifier.sol";
-import "../node_modules/hardhat/console.sol";
 
 /* Reference Poseidon hasher library contract using 6 inputs */
 library Poseidon {
@@ -43,6 +42,7 @@ contract TheWord {
     /// EVENTS ///
     event NewRound(uint256 indexed round, uint256 indexed commitment, uint256 indexed prize);
     event Shouted(uint256 indexed round, address indexed shoutedBy);
+    event PrizeAdded(uint256 indexed round, uint256 indexed added);
 
     /// MODIFIERS ///
 
@@ -112,6 +112,15 @@ contract TheWord {
 
         // emit event announcing round end
         emit Shouted(_round, _shoutedBy);
+    }
+
+    /**
+     * Adds a prize to a round that has already been created
+     * @param _round - the round to add a prize to
+     */
+    function fundPrize(uint256 _round) external payable active(_round) {
+        rounds[_round].prize += msg.value;
+        emit PrizeAdded(_round, msg.value);
     }
 
     /// INTERNAL FUNCTIONS ///

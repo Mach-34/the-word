@@ -1,6 +1,8 @@
-import { ethers } from 'hardhat';
+import { ethers, run } from 'hardhat';
 import { poseidonContract } from 'circomlibjs';
 import { Signer } from 'ethers';
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 async function main() {
     const network = await ethers.provider.getNetwork();
@@ -33,10 +35,34 @@ async function main() {
     const theWordFactory = await ethers.getContractFactory('TheWord', {
         libraries: { Poseidon: poseidonLibAddress },
     });
-    let theWord = await theWordFactory.deploy(verifierAddress);
+    const theWord = await theWordFactory.deploy(verifierAddress);
     await theWord.waitForDeployment();
 
-    console.log(`Deployed TheWord to ${ await theWord.getAddress()}`)
+    const theWordAddress = await theWord.getAddress(); 
+    console.log(`Deployed TheWord to ${theWordAddress}`);
+
+    console.log("Waiting 30 seconds then verifying source on etherscan...");
+    await delay(30000);
+    console.log("Starting source verification...");
+
+    // verify contract on etherscan if not local
+    if (network.chainId != BigInt(31337) as bigint) {
+        await run("verify:verify", { address: verifierAddress});
+        await run("verify:verify", {
+            address: theWordAddress,
+            constructorArguments: [verifierAddress]
+        });
+    }
+}
+
+/**
+ * Determine if err message can be ignored
+ * @param err - the error text returned from etherscan verification
+ * @return true if bytecode is verified, false otherwise 
+ */
+const alreadyVerified = (err: string) => {
+    return err.includes('Reason: Already Verified')
+        || err.includes('Contract source code already verified')
 }
 
 main()

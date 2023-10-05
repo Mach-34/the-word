@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
-      "outDir": "cli/dest",
-      "rootDir": "cli/src",
+      "outDir": "dest",
+      "rootDir": "src",
       "target": "es2020",
       "lib": ["dom", "esnext", "es2017.object"],
       "module": "NodeNext",
@@ -18,5 +18,5 @@
       "skipLibCheck": true,
     },
     "references": [],
-    "include": ["cli/src"]
+    "include": ["src"]
   }

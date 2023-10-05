@@ -180,4 +180,46 @@ describe('Test The Word Contract', async () => {
                 .to.be.revertedWith("Round is not active");
         });
     });
+    describe("Fund prize externally", async () => {
+        it("Cannot fund prize if game does not exist", async () => {
+            // fail to fund prize on game that does not exist
+            const oneEth = ethers.parseUnits("1", "ether");
+            await expect(contract.fundPrize(3, { value: oneEth }))
+                .to.be.revertedWith("Round is not active");
+        })
+        it("Cannot fund prize if game is over", async () => {
+            // fail to fund prize on game that is over
+            const oneEth = ethers.parseUnits("1", "ether");
+            await expect(contract.fundPrize(1, { value: oneEth }))
+                .to.be.revertedWith("Round is not active");
+        })
+        it("Fund prize on existing game", async () => {
+            // create new round
+            const secret = "hunter4";
+            const felts = convertTitleToFelts(secret);
+            const commitment = F.toObject(poseidon(felts));
+            const { proof } = await groth16.fullProve(
+                { phrase: felts },
+                wasmPath,
+                zkeyPath
+            );
+            const formattedProof = formatProof(proof);
+            await contract.newRound(commitment, formattedProof).then(async (tx) => await tx.wait());
+
+            // get balances before funding
+            const oneEth = ethers.parseUnits("1", "ether");
+            const preBalance = await contract.rounds(3).then((rounds) => rounds.prize);
+            expect(preBalance).to.equal(0);
+            
+            // fund prize
+            const tx = contract.fundPrize(3, { value: oneEth });
+            await expect(tx).to.emit(contract, "PrizeAdded").withArgs(3, oneEth);
+
+            // get balances after funding
+            const postBalance = await contract.rounds(3).then((rounds) => rounds.prize);
+
+            // check that prize balance has increased
+            expect(postBalance).to.equal(oneEth);
+        })
+    })
 })

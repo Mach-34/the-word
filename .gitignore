@@ -20,5 +20,5 @@ the_word_proof.json
 db
 
 # contract artifacts
-contract/artifacts
-contract/cache
+contracts/artifacts
+contracts/cache

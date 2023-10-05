@@ -1,6 +1,7 @@
 import "dotenv/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-verify";
 import {
     HardhatUserConfig,
     SolcUserConfig,
@@ -56,7 +57,10 @@ const makeNetwork = (network: string) : HttpNetworkUserConfig => {
 
 const config: HardhatUserConfig = {
     solidity: {
-        compilers: [makeCompiler("0.8.21"), makeCompiler("0.7.3")],
+        compilers: [
+            makeCompiler("0.8.21"),
+            makeCompiler("0.7.3"),
+        ],
     },
     networks: {
         goerli: makeNetwork("goerli"),
@@ -72,6 +76,13 @@ const config: HardhatUserConfig = {
     mocha: {
         timeout: 200000,
     },
+    etherscan: {
+        apiKey: {
+            goerli: process.env.ETHERSCAN!,
+            sepolia: process.env.ETHERSCAN!,
+            mainnet: process.env.ETHERSCAN!,
+        }
+    }
 };
 
 export default config;
