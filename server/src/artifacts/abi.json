@@ -14,19 +14,25 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "round",
                 "type": "uint256"
             },
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "commitment",
                 "type": "uint256"
             },
             {
-                "indexed": true,
+                "indexed": false,
+                "internalType": "string",
+                "name": "username",
+                "type": "string"
+            },
+            {
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "prize",
                 "type": "uint256"
@@ -39,13 +45,13 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "round",
                 "type": "uint256"
             },
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "added",
                 "type": "uint256"
@@ -58,16 +64,16 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "round",
                 "type": "uint256"
             },
             {
-                "indexed": true,
-                "internalType": "address",
+                "indexed": false,
+                "internalType": "string",
                 "name": "shoutedBy",
-                "type": "address"
+                "type": "string"
             }
         ],
         "name": "Shouted",
@@ -124,6 +130,11 @@
                 "internalType": "uint256",
                 "name": "_commitment",
                 "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "_username",
+                "type": "string"
             },
             {
                 "components": [
@@ -187,9 +198,9 @@
                 "type": "uint256"
             },
             {
-                "internalType": "address",
+                "internalType": "string",
                 "name": "shoutedBy",
-                "type": "address"
+                "type": "string"
             },
             {
                 "internalType": "bool",
@@ -232,14 +243,33 @@
                 "type": "string"
             },
             {
-                "internalType": "address",
-                "name": "_shoutedBy",
-                "type": "address"
+                "internalType": "string",
+                "name": "_username",
+                "type": "string"
             }
         ],
         "name": "shout",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "source",
+                "type": "string"
+            }
+        ],
+        "name": "stringToUint",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "result",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "pure",
         "type": "function"
     }
 ]

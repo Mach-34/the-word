@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { Contract } from 'ethers';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import { groth16 } from 'snarkjs';
-import { initialize, convertTitleToFelts, formatProof } from './utils';
+import { initialize, convertTitleToFelts, formatProof, usernameToBigint } from './utils';
 import vkey from './artifacts/verifier.json';
 
 const wasmPath = 'test/artifacts/the_word.wasm';
@@ -37,7 +37,7 @@ describe('Test The Word Contract', async () => {
         F = poseidon.F;
     });
 
-    describe("Test Word Commitment", async () => {
+    describe("Test Converters", async () => {
         it("Test Word Serialization", async () => {
             // get expected felts
             const secretPhrase = "this phrase is longer than just a single field element";
@@ -62,11 +62,19 @@ describe('Test The Word Contract', async () => {
             // check that the hashes match
             expect(hash == commitment);
         });
-
+        it("Test Username Casting", async () => {
+            const username = "jp4g.eth";
+            const expected = usernameToBigint(username);
+            const actual = await contract.stringToUint(username);
+            expect(actual == expected);
+        })
     })
 
     describe("Create a new round", async () => {
         it("Cannot create new round if knowledge of preimage fails", async () => {
+            // get username
+            const username = "u53rn@m3";
+            const usernameEncoded = usernameToBigint(username);
             // generate the hash asserted in the contract
             const assertedSecret = "hunter2";
             const commitment = F.toObject(poseidon(convertTitleToFelts(assertedSecret)));
@@ -74,7 +82,7 @@ describe('Test The Word Contract', async () => {
             // prove for the second secret
             const secret = "hunter3";
             const { proof } = await groth16.fullProve(
-                { phrase: convertTitleToFelts(secret) },
+                { phrase: convertTitleToFelts(secret), username: usernameEncoded },
                 wasmPath,
                 zkeyPath
             );
@@ -83,10 +91,14 @@ describe('Test The Word Contract', async () => {
             const formattedProof = formatProof(proof);
 
             // fail to create a new round
-            await expect(contract.newRound(commitment, formattedProof))
+            await expect(contract.newRound(commitment, username, formattedProof))
                 .to.be.revertedWith("Invalid proof");
         });
-        it("Create a round with no prize", async () => {
+        it("Cannot create new round if username is wrong", async () => {
+            // get username
+            const username = "u53rn@m3";
+            const usernameEncoded = usernameToBigint(username);
+
             // compute commitment to secret
             const secret = "hunter2";
             const felts = convertTitleToFelts(secret);
@@ -94,7 +106,34 @@ describe('Test The Word Contract', async () => {
 
             // prove knowledge of secret
             const { proof } = await groth16.fullProve(
-                { phrase: felts },
+                { phrase: felts, username: usernameEncoded },
+                wasmPath,
+                zkeyPath
+            );
+
+            // format proof for solidity
+            const formattedProof = formatProof(proof);
+
+            // choose different username to assert
+            const wrongUsername = "hello";
+
+            // fail to create a new round
+            await expect(contract.newRound(commitment, wrongUsername, formattedProof))
+                .to.be.revertedWith("Invalid proof");
+        });
+        it("Create a round with no prize", async () => {
+            // get username
+            const username = "u53rn@m3";
+            const usernameEncoded = usernameToBigint(username);
+
+            // compute commitment to secret
+            const secret = "hunter2";
+            const felts = convertTitleToFelts(secret);
+            const commitment = F.toObject(poseidon(felts));
+
+            // prove knowledge of secret
+            const { proof } = await groth16.fullProve(
+                { phrase: felts, username: usernameEncoded },
                 wasmPath,
                 zkeyPath
             );
@@ -103,10 +142,14 @@ describe('Test The Word Contract', async () => {
             const formattedProof = formatProof(proof);
 
             // expect transaction success
-            const tx = contract.newRound(commitment, formattedProof);
-            await expect(tx).to.emit(contract, "NewRound").withArgs(1, commitment, 0);
+            const tx = contract.newRound(commitment, username, formattedProof);
+            await expect(tx).to.emit(contract, "NewRound").withArgs(1, commitment, username, 0);
         });
         it("Create a round with a prize", async () => {
+            // get username
+            const username = "u53rn@m3two";
+            const usernameEncoded = usernameToBigint(username);
+
             // compute commitment to secret
             const secret = "This is a much longer phrase. Chances are, you don't know this phrase!";
             const felts = convertTitleToFelts(secret);
@@ -114,7 +157,7 @@ describe('Test The Word Contract', async () => {
 
             // prove knowledge of secret
             const { proof } = await groth16.fullProve(
-                { phrase: felts },
+                { phrase: felts, username: usernameEncoded },
                 wasmPath,
                 zkeyPath
             );
@@ -122,29 +165,29 @@ describe('Test The Word Contract', async () => {
             // format proof for solidity
             const oneEth = ethers.parseUnits("1", "ether");
             const formattedProof = formatProof(proof);
-            const tx = contract.newRound(commitment, formattedProof, { value: oneEth });
-            await expect(tx).to.emit(contract, "NewRound").withArgs(2, commitment, oneEth);
+            const tx = contract.newRound(commitment, username, formattedProof, { value: oneEth });
+            await expect(tx).to.emit(contract, "NewRound").withArgs(2, commitment, username, oneEth);
         });
     })
     describe("Shout to end round", async () => {
         it("Cannot shout if game does not exist", async () => {
             // fail to shout on game that does not exist
-            const address = await alice.getAddress();
-            await expect(contract.shout(3, "password", alice))
+            const username = "alice";
+            await expect(contract.shout(3, "password", username))
                 .to.be.revertedWith("Round is not active");
         });
         it("Cannot shout if wrong secret is provided", async () => {
             // fail to shout if wrong secret is provided
-            const address = await alice.getAddress();
-            await expect(contract.shout(1, "hunter3", address))
+            const username = "alice";
+            await expect(contract.shout(1, "hunter3", username))
                 .to.be.revertedWith("Invalid secret phrase");
         });
         it("Shout on game with no prize", async () => {
             // shout with the correct secret
+            const username = "alice";
             const secret = "hunter2";
-            const address = await alice.getAddress();
-            const tx = (contract.connect(alice) as Contract).shout(1, secret, address);
-            await expect(tx).to.emit(contract, "Shouted").withArgs(1, address);
+            const tx = (contract.connect(alice) as Contract).shout(1, secret, username);
+            await expect(tx).to.emit(contract, "Shouted").withArgs(1, username);
         })
         it("Shout on game with prize", async () => {
             // get balances before shout
@@ -158,10 +201,10 @@ describe('Test The Word Contract', async () => {
             expect(preBalance.contract).to.be.equal(oneEth);
 
             // shout with the correct secret
+            const username = "alice";
             const secret = "This is a much longer phrase. Chances are, you don't know this phrase!";
-            const address = await alice.getAddress();
-            const tx = (contract.connect(alice) as Contract).shout(2, secret, address);
-            await expect(tx).to.emit(contract, "Shouted").withArgs(2, address);
+            const tx = (contract.connect(alice) as Contract).shout(2, secret, username);
+            await expect(tx).to.emit(contract, "Shouted").withArgs(2, username);
 
             // get balances after shout
             const postBalance = {
@@ -175,8 +218,8 @@ describe('Test The Word Contract', async () => {
         });
         it("Cannot shout if game is over", async () => {
             // fail to shout on game that does not exist
-            const address = await alice.getAddress();
-            await expect(contract.shout(1, "hunter2", address))
+            const username = "alice";
+            await expect(contract.shout(1, "hunter2", username))
                 .to.be.revertedWith("Round is not active");
         });
     });
@@ -195,22 +238,25 @@ describe('Test The Word Contract', async () => {
         })
         it("Fund prize on existing game", async () => {
             // create new round
+            const username = "u53rn@m3";
+            const usernameEncoded = usernameToBigint(username);
             const secret = "hunter4";
             const felts = convertTitleToFelts(secret);
             const commitment = F.toObject(poseidon(felts));
             const { proof } = await groth16.fullProve(
-                { phrase: felts },
+                { phrase: felts, username: usernameEncoded },
                 wasmPath,
                 zkeyPath
             );
             const formattedProof = formatProof(proof);
-            await contract.newRound(commitment, formattedProof).then(async (tx) => await tx.wait());
+            await contract.newRound(commitment, username, formattedProof)
+                .then(async (tx) => await tx.wait());
 
             // get balances before funding
             const oneEth = ethers.parseUnits("1", "ether");
             const preBalance = await contract.rounds(3).then((rounds) => rounds.prize);
             expect(preBalance).to.equal(0);
-            
+
             // fund prize
             const tx = contract.fundPrize(3, { value: oneEth });
             await expect(tx).to.emit(contract, "PrizeAdded").withArgs(3, oneEth);

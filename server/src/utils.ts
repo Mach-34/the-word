@@ -49,7 +49,7 @@ export function getContract(): Contract {
  * @param title - the string entered by user to compute hash for (will be length checked)
  * @return - array of 7 bigints compatible with noir field element api
  */
-export function convertTitleToFelts(title: string) : Array<bigint> {
+export function convertTitleToFelts(title: string): Array<bigint> {
     // check length of title does not exceed spotify's requirements
     if (title.length > 180)
         throw Error('title too long: must be <= 200 characters');
@@ -76,4 +76,21 @@ export function convertTitleToFelts(title: string) : Array<bigint> {
         chunks.push(BigInt(`0x${chunk.toString('hex')}`) as bigint);
     }
     return chunks;
+}
+
+/**
+ * Convers a utf-8 string (username) into a `bigint`
+ * 
+ * @param username - the string to convert to utf8 then decimal on bn254
+ * @returns - the username as a `bigint` compatible with a single bn254 field element (Fr)
+ */
+export function usernameToBigint(username: string): bigint {
+    if (username.length > 31)
+        throw new Error('username too long: must be <= 31 characters');
+    // encode utf8
+    const encoder = new TextEncoder();
+    const encoded = encoder.encode(username);
+    // convert to bigint
+    const hex = Buffer.from(encoded).toString('hex')
+    return BigInt(`0x${hex}`) as bigint;
 }

@@ -7,11 +7,11 @@ import {
     getProof,
     getWasm,
 } from "./index.js";
-import { ethers } from "ethers";
 import figlet from 'figlet';
 import { Command, Argument } from "commander";
 import chalk from "chalk";
 import fs from "fs";
+import { execSync } from "child_process";
 
 async function main() {
     // log header
@@ -27,13 +27,13 @@ async function main() {
     program
         .command("create")
         .argument("<phrase>", "The phrase/ word being proven")
-        .argument("<key>", "Private key to use for authorizing actions")
+        .argument("<username>", "A unique username to associate this action with")
         .argument("<hint>", "Hint to guessing the secret phrase")
         .description("Create a new round with a secret phrase")
-        .action(async (phrase, key) => {
+        .action(async (phrase, username, hint) => {
             // check args exist
-            if (!phrase || !key) {
-                console.log(`${chalk.red("ERROR: ")}must provide a phrase and private key`);
+            if (!phrase || !username || !hint) {
+                console.log(`${chalk.red("ERROR: ")}must provide a phrase, username, and hint!`);
                 return;
             }
         });
@@ -56,12 +56,12 @@ async function main() {
         .command("whisper")
         .argument("<round>", "The round to whisper to")
         .argument("<phrase>", "The secret phrase to prove knowledge of and whisper")
-        .argument("<key>", "Private key to use for authorizing actions")
+        .argument("<username>", "A unique username to associate this action with")
         .description("Whisper a secret phrase")
-        .action(async (round, phrase) => {
+        .action(async (round, phrase, username) => {
             // check args exist
-            if (!round || !phrase) {
-                console.log(`${chalk.red("ERROR: ")}must provide a round number and phrase`);
+            if (!round || !phrase || !username) {
+                console.log(`${chalk.red("ERROR: ")}must provide a round number, phrase, and username!`);
                 return;
             }
         });
@@ -71,12 +71,12 @@ async function main() {
         .command("shout")
         .argument("<round>", "The round to shout to")
         .argument("<phrase>", "The secret phrase to prove knowledge of and shout")
-        .argument("<key>", "Private key to use for authorizing actions")
+        .argument("<username>", "A unique username to associate this action with")
         .description("Shout a secret phrase")
-        .action(async (round, phrase) => {
+        .action(async (round, phrase, username) => {
             // check args exist
-            if (!round || !phrase) {
-                console.log(`${chalk.red("ERROR: ")}must provide a round number and phrase`);
+            if (!round || !phrase || !username) {
+                console.log(`${chalk.red("ERROR: ")}must provide a round number, phrase, and username!`);
                 return;
             }
         });
@@ -93,7 +93,6 @@ async function main() {
     } else if (program.args[0] == "shout") {
         await shout(program.args[1], program.args[2], program.args[3]);
     }
-
 }
 
 
@@ -101,17 +100,16 @@ async function main() {
  * Create a new round of TheWord from the cli
  * 
  * @param phrase - the secret phrase to guess
- * @param key - the private key to authorize the onchain action with
+ * @param username - the username to associate this action with
  * @param hint - the hint given to help others guess the secret phrase
  */
-async function createRound(phrase: string, key: string, hint: string) {
+async function createRound(phrase: string, username: string, hint: string) {
     // get address
-    const wallet = new ethers.Wallet(key);
     console.log("=====================================")
     console.log("Creating a new round...")
     console.log(`Secret Phrase: ${chalk.cyan(`"${phrase}"`)}`);
     console.log(`Song hint: ${chalk.cyan(`"${hint}"`)}`);
-    console.log(`Sending from: ${chalk.cyan(wallet.address)}`);
+    console.log(`Username: ${chalk.cyan(username)}`);
     // convert inputted song title to field elements
     if (phrase.length > 180) {
         console.log(`${chalk.red("ERROR: ")} a phrase cannot be more than 180 characters long`);
@@ -121,15 +119,12 @@ async function createRound(phrase: string, key: string, hint: string) {
     // initialize proving engine
     const engine = await CircomEngine.init();
 
-    // chunk the input
-    const input: CircuitInput = { phrase: engine.chunk(phrase) };
+    // format input
+    const input: CircuitInput = engine.toInputs(phrase, username);
 
     // generate proof
     const { proof, publicSignals } = await engine.prove(input);
     const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
-
-    // sign message
-    const signature = await wallet.signMessage(hash);
 
     // send to server
     const URL = `${process.env.API!}/create`;
@@ -138,20 +133,30 @@ async function createRound(phrase: string, key: string, hint: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             message: hash,
+            username,
             proof,
-            signature,
-            address: wallet.address,
             hint
         })
     });
+
     console.log("=====================================")
     if (res.status != 201) {
         console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
     } else {
+        // write proof to file
+        const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
+        const filepath = `${pwd}/the-word-proof.json`;
+        const data = {
+            proof,
+            publicSignals,
+        };
+        fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+        // log result
         const body = await res.json();
         console.log(`${chalk.green("SUCCESS: ")} created new round`);
         console.log(`Round number: ${chalk.cyan(body.round)}`);
         console.log(`Tx hash: ${chalk.cyan(body.tx)}`);
+        console.log(`Proof saved to ${chalk.cyan(filepath)}`)
     }
     console.log("=====================================")
 
@@ -201,9 +206,9 @@ async function getRound(round: string) {
  * 
  * @param round - the round to whisper solution for
  * @param phrase - the secret phrase to prove knowledge of
- * @param key - the private key to authorize the onchain action with
+ * @param username - the username to associate this action with
  */
-async function whisper(round: string, phrase: string, key: string) {
+async function whisper(round: string, phrase: string, username: string) {
     // try to parse round number
     try {
         Number(round);
@@ -213,12 +218,11 @@ async function whisper(round: string, phrase: string, key: string) {
     }
 
     // get address
-    const wallet = new ethers.Wallet(key);
     console.log("=====================================")
     console.log("Whispering solution for a round...")
     console.log(`Round number: ${chalk.cyan(round)}`);
     console.log(`Secret Phrase: ${chalk.cyan(`"${phrase}"`)}`);
-    console.log(`Sending from: ${chalk.cyan(wallet.address)}`);
+    console.log(`Username: ${chalk.cyan(username)}`);
 
     // convert inputted song title to field elements
     if (phrase.length > 180) {
@@ -229,15 +233,12 @@ async function whisper(round: string, phrase: string, key: string) {
     // initialize proving engine
     const engine = await CircomEngine.init();
 
-    // chunk the input
-    const input: CircuitInput = { phrase: engine.chunk(phrase) };
+    // format input
+    const input: CircuitInput = engine.toInputs(phrase, username);
 
     // generate proof
     const { proof, publicSignals } = await engine.prove(input);
     const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
-
-    // sign message
-    const signature = await wallet.signMessage(hash);
 
     // send to server
     const URL = `${process.env.API!}/whisper`;
@@ -247,9 +248,8 @@ async function whisper(round: string, phrase: string, key: string) {
         body: JSON.stringify({
             round,
             message: hash,
+            username,
             proof,
-            signature,
-            address: wallet.address,
         })
     });
 
@@ -258,7 +258,16 @@ async function whisper(round: string, phrase: string, key: string) {
     if (res.status != 201) {
         console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
     } else {
+        // write proof to file
+        const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
+        const filepath = `${pwd}/the-word-proof.json`;
+        const data = {
+            proof,
+            publicSignals,
+        };
+        fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
         console.log(`${chalk.green("SUCCESS: ")} whispered solution to round ${chalk.cyan(round)}`);
+        console.log(`Proof saved to ${chalk.cyan(filepath)}`)
     }
     console.log("=====================================")
 }
@@ -268,9 +277,9 @@ async function whisper(round: string, phrase: string, key: string) {
  * 
  * @param round - the round to shout solution for
  * @param phrase - the secret phrase to expose publicly
- * @param key - the private key to authorize the onchain action with
+ * @param username - the username to associate this action with
  */
-async function shout(round: string, phrase: string, key: string) {
+async function shout(round: string, phrase: string, username: string) {
     // try to parse round number
     try {
         Number(round);
@@ -280,15 +289,11 @@ async function shout(round: string, phrase: string, key: string) {
     }
 
     // get address
-    const wallet = new ethers.Wallet(key);
     console.log("=====================================")
     console.log("Shouting solution for a round...")
     console.log(`Round number: ${chalk.cyan(round)}`);
     console.log(`Secret Phrase: ${chalk.cyan(`"${phrase}"`)}`);
-    console.log(`Sending from: ${chalk.cyan(wallet.address)}`);
-
-    // sign the secret phrase
-    const signature = await wallet.signMessage(phrase);
+    console.log(`Username: ${chalk.cyan(username)}`);
 
     // send to server
     const URL = `${process.env.API!}/shout`;
@@ -298,8 +303,7 @@ async function shout(round: string, phrase: string, key: string) {
         body: JSON.stringify({
             round,
             message: phrase,
-            signature,
-            address: wallet.address,
+            username
         })
     });
 
