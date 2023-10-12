@@ -78,7 +78,15 @@ export function convertTitleToFelts(title: string): Array<bigint> {
     return chunks;
 }
 
+/**
+ * Convers a utf-8 string (username) into a `bigint`
+ * 
+ * @param username - the string to convert to utf8 then decimal on bn254
+ * @returns - the username as a `bigint` compatible with a single bn254 field element (Fr)
+ */
 export function usernameToBigint(username: string): bigint {
+    if (username.length > 31)
+        throw new Error('username too long: must be <= 31 characters');
     // encode utf8
     const encoder = new TextEncoder();
     const encoded = encoder.encode(username);
