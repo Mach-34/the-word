@@ -22,4 +22,3 @@ template the_word(num_felts) {
 }
 
 component main { public [username] } = the_word(6);
-// component main = the_word(6);
