@@ -7,11 +7,11 @@ import {
     getProof,
     getWasm,
 } from "./index.js";
-import { ethers } from "ethers";
 import figlet from 'figlet';
 import { Command, Argument } from "commander";
 import chalk from "chalk";
 import fs from "fs";
+import { execSync } from "child_process";
 
 async function main() {
     // log header
@@ -125,6 +125,7 @@ async function createRound(phrase: string, username: string, hint: string) {
     // generate proof
     const { proof, publicSignals } = await engine.prove(input);
     const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
+
     // send to server
     const URL = `${process.env.API!}/create`;
     const res = await fetch(URL, {
@@ -137,14 +138,25 @@ async function createRound(phrase: string, username: string, hint: string) {
             hint
         })
     });
+
     console.log("=====================================")
     if (res.status != 201) {
         console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
     } else {
+        // write proof to file
+        const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
+        const filepath = `${pwd}/the-word-proof.json`;
+        const data = {
+            proof,
+            publicSignals,
+        };
+        fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+        // log result
         const body = await res.json();
         console.log(`${chalk.green("SUCCESS: ")} created new round`);
         console.log(`Round number: ${chalk.cyan(body.round)}`);
         console.log(`Tx hash: ${chalk.cyan(body.tx)}`);
+        console.log(`Proof saved to ${chalk.cyan(filepath)}`)
     }
     console.log("=====================================")
 
@@ -246,7 +258,16 @@ async function whisper(round: string, phrase: string, username: string) {
     if (res.status != 201) {
         console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
     } else {
+        // write proof to file
+        const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
+        const filepath = `${pwd}/the-word-proof.json`;
+        const data = {
+            proof,
+            publicSignals,
+        };
+        fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
         console.log(`${chalk.green("SUCCESS: ")} whispered solution to round ${chalk.cyan(round)}`);
+        console.log(`Proof saved to ${chalk.cyan(filepath)}`)
     }
     console.log("=====================================")
 }
