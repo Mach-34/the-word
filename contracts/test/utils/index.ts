@@ -14,7 +14,7 @@ export type SolidityGroth16Proof = {
  * 
  * @return - the address of the deployed contract
  */
-export async function initialize() : Promise<string> {
+export async function initialize(): Promise<string> {
     // get deployer wallet
     // type mismatch bug exists with signers, must set type to any
     // https://ethereum.stackexchange.com/questions/154384/argument-of-type-hardhatetherssigner-is-not-assignable-to-parameter-of-type-s
@@ -54,7 +54,7 @@ export async function initialize() : Promise<string> {
  * @param title - the string entered by user to compute hash for (will be length checked)
  * @return - array of 7 bigints compatible with noir field element api
  */
-export function convertTitleToFelts(title: string) : Array<bigint> {
+export function convertTitleToFelts(title: string): Array<bigint> {
     // check length of title does not exceed spotify's requirements
     if (title.length > 180)
         throw Error('title too long: must be <= 200 characters');
@@ -68,7 +68,7 @@ export function convertTitleToFelts(title: string) : Array<bigint> {
             // if start is out of bounds, field element = 0
             chunk = Buffer.alloc(31);
         } else if (end > title.length) {
-            // if end is out of bounds, pad front with 0's
+            // if end is out of bounds, pad end with 0's
             const partial = Buffer.from(title.slice(start), 'utf-8');
             chunk = Buffer.concat([partial, Buffer.alloc(31 - partial.length)]);
         } else {
@@ -92,7 +92,7 @@ export function convertTitleToFelts(title: string) : Array<bigint> {
  * @param {Object} proof - the proof generated from circom circuit
  * @returns - Groth16 proof formatted to work in solidity
  */
-export function formatProof(proof: Groth16Proof) : SolidityGroth16Proof {
+export function formatProof(proof: Groth16Proof): SolidityGroth16Proof {
     return {
         a: proof.pi_a.slice(0, 2),
         b: [
@@ -101,4 +101,15 @@ export function formatProof(proof: Groth16Proof) : SolidityGroth16Proof {
         ],
         c: proof.pi_c.slice(0, 2),
     };
+}
+
+export function usernameToBigint(username: string): bigint {
+    // encode utf8
+    const encoder = new TextEncoder();
+    const encoded = encoder.encode(username);
+    // pad end with 0's
+    // const padded = Buffer.concat([Buffer.from(encoded), Buffer.alloc(32 - encoded.length)]);
+    // convert to bigint
+    const hex = Buffer.from(encoded).toString('hex')
+    return BigInt(`0x${hex}`) as bigint;
 }
