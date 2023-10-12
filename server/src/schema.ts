@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 /// USERS ///
 
 const UserSchema = new mongoose.Schema({
-    pubkey: {
+    username: {
         type: String,
         required: true,
         unique: true

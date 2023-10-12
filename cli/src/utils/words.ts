@@ -34,3 +34,12 @@ export function convertTitleToFelts(title: string) : Array<bigint> {
     }
     return chunks;
 }
+
+export function usernameToBigint(username: string): bigint {
+    // encode utf8
+    const encoder = new TextEncoder();
+    const encoded = encoder.encode(username);
+    // convert to bigint
+    const hex = Buffer.from(encoded).toString('hex')
+    return BigInt(`0x${hex}`) as bigint;
+}

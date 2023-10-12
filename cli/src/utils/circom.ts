@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { groth16, Groth16Proof } from "snarkjs";
 import { buildPoseidon, Poseidon } from "circomlibjs";
-import { convertTitleToFelts } from "./words.js";
+import { convertTitleToFelts, usernameToBigint } from "./words.js";
 import vkey from "../artifacts/verifier.json" assert { type: "json" };
 
 const zkey = "src/artifacts/the_word.zkey";
@@ -10,6 +10,7 @@ const wasm = "src/artifacts/the_word.wasm";
 type CircuitInput = {
     // secret phrase chunked into field elements
     phrase: Array<bigint>,
+    username: bigint,
 }
 
 class CircomEngine {
@@ -26,8 +27,12 @@ class CircomEngine {
         return new CircomEngine(poseidon, poseidon.F);
     }
 
-    chunk(phrase: string): Array<bigint> {
-        return convertTitleToFelts(phrase);
+
+    toInputs(phrase: string, username: string): CircuitInput {
+        return {
+            phrase: convertTitleToFelts(phrase),
+            username: usernameToBigint(username),
+        }
     }
 
     async hash(phrase: Array<any>): Promise<bigint> {
