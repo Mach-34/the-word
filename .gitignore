@@ -17,6 +17,7 @@ yarn-error.log
 
 # runtime artifacts
 the_word_proof.json
+the-word-proof.json
 db
 
 # contract artifacts
