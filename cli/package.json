@@ -1,6 +1,6 @@
 {
   "name": "@the-word-pse/cli",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "main": "index.js",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,6 @@
     "@types/figlet": "^1.5.6",
     "@types/node": "^20.8.2",
     "@types/snarkjs": "^0.7.3",
-    "dotenv": "^16.3.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }
