@@ -10,39 +10,42 @@ import { getContract, formatProof, convertTitleToFelts, usernameToBigint } from 
  * @dev todo: add metatx functionality so a creator can add ether to the prize pool
  */
 export async function createRound(req: Request, res: Response) {
-    // message is the commitment to the round secret
-    const { message, username, proof, hint } = req.body;
+    /// DISABLE THIS ENDPOINT UNTIL FURTHER NOTICE ///
+    return res.status(403).send("Creation endpoint is currently disabled");
+    //////////////////////////////////////////////////
+    // // message is the commitment to the round secret
+    // const { message, username, proof, hint } = req.body;
 
-    // convert the username into a bigint
-    const usernameEncoded = usernameToBigint(username);
+    // // convert the username into a bigint
+    // const usernameEncoded = usernameToBigint(username);
 
-    // verify the authenticity of the proof
-    const verified = await groth16.verify(vkey, [message, usernameEncoded], proof);
-    if (!verified) {
-        res.status(400).send("Invalid proof");
-        return;
-    }
+    // // verify the authenticity of the proof
+    // const verified = await groth16.verify(vkey, [message, usernameEncoded], proof);
+    // if (!verified) {
+    //     res.status(400).send("Invalid proof");
+    //     return;
+    // }
 
-    // format proof for solidity
-    const formattedProof = formatProof(proof);
+    // // format proof for solidity
+    // const formattedProof = formatProof(proof);
 
-    // post new round onchain
-    // todo: add way to add prizes from api (likely using metatx)
-    const contract = await getContract();
-    const tx = await contract.newRound(message, username, formattedProof);
-    const receipt = await tx.wait();
+    // // post new round onchain
+    // // todo: add way to add prizes from api (likely using metatx)
+    // const contract = await getContract();
+    // const tx = await contract.newRound(message, username, formattedProof);
+    // const receipt = await tx.wait();
 
-    // get round number (arg 0 in only emitted event NewRound)
-    const round = Number(receipt.logs[0].args[0]);
+    // // get round number (arg 0 in only emitted event NewRound)
+    // const round = Number(receipt.logs[0].args[0]);
 
-    // create new round in database
-    await Round.create({ commitment: message, hint, round });
+    // // create new round in database
+    // await Round.create({ commitment: message, hint, round });
 
-    return res.status(201).json({
-        message: "Created round successfully!",
-        round,
-        tx: receipt.hash
-    });
+    // return res.status(201).json({
+    //     message: "Created round successfully!",
+    //     round,
+    //     tx: receipt.hash
+    // });
 }
 
 /**
