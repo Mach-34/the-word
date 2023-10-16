@@ -2,10 +2,7 @@
 import {
     CircomEngine,
     CircuitInput,
-    checkProofPathDir,
-    checkProofPath,
-    getProof,
-    getWasm,
+    API_URL,
 } from "./index.js";
 import figlet from 'figlet';
 import { Command, Argument } from "commander";
@@ -24,19 +21,20 @@ async function main() {
         .description("A game to see how big a secret can become before it's too big to keep")
 
     // create new round command
-    program
-        .command("create")
-        .argument("<phrase>", "The phrase/ word being proven")
-        .argument("<username>", "A unique username to associate this action with")
-        .argument("<hint>", "Hint to guessing the secret phrase")
-        .description("Create a new round with a secret phrase")
-        .action(async (phrase, username, hint) => {
-            // check args exist
-            if (!phrase || !username || !hint) {
-                console.log(`${chalk.red("ERROR: ")}must provide a phrase, username, and hint!`);
-                return;
-            }
-        });
+    /// DISABLE THIS COMMAND UNTIL FURTHER NOTICE ///
+    // program
+    //     .command("create")
+    //     .argument("<phrase>", "The phrase/ word being proven")
+    //     .argument("<username>", "A unique username to associate this action with")
+    //     .argument("<hint>", "Hint to guessing the secret phrase")
+    //     .description("Create a new round with a secret phrase")
+    //     .action(async (phrase, username, hint) => {
+    //         // check args exist
+    //         if (!phrase || !username || !hint) {
+    //             console.log(`${chalk.red("ERROR: ")}must provide a phrase, username, and hint!`);
+    //             return;
+    //         }
+    //     });
 
     // get round information command
     program
@@ -84,9 +82,10 @@ async function main() {
     // argument handler
     // todo: more robust argument handling
     program.parseAsync(process.argv);
-    if (program.args[0] == "create") {
-        await createRound(program.args[1], program.args[2], program.args[3]);
-    } else if (program.args[0] == "get") {
+    /// DISABLE CREATE COMMAND UNTIL FURTHER NOTICE ///
+    // if (program.args[0] == "create") {
+    //     await createRound(program.args[1], program.args[2], program.args[3]);
+    if (program.args[0] == "get") {
         await getRound(program.args[1]);
     } else if (program.args[0] == "whisper") {
         await whisper(program.args[1], program.args[2], program.args[3]);
@@ -127,7 +126,7 @@ async function createRound(phrase: string, username: string, hint: string) {
     const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
 
     // send to server
-    const URL = `${process.env.API!}/create`;
+    const URL = `${API_URL}/create`;
     const res = await fetch(URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,7 +176,7 @@ async function getRound(round: string) {
     }
 
     // retrieve round info from the server
-    const URL = `${process.env.API!}/round/${round}`;
+    const URL = `${API_URL}/round/${round}`;
     const res = await fetch(URL);
     if (res.status === 404) {
         console.log(`${chalk.red("ERROR: ")} round does not exist`);
@@ -241,7 +240,7 @@ async function whisper(round: string, phrase: string, username: string) {
     const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
 
     // send to server
-    const URL = `${process.env.API!}/whisper`;
+    const URL = `${API_URL}/whisper`;
     const res = await fetch(URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -296,7 +295,7 @@ async function shout(round: string, phrase: string, username: string) {
     console.log(`Username: ${chalk.cyan(username)}`);
 
     // send to server
-    const URL = `${process.env.API!}/shout`;
+    const URL = `${API_URL}/shout`;
     const res = await fetch(URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

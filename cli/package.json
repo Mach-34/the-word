@@ -1,6 +1,6 @@
 {
-  "name": "the-word-cli",
-  "version": "0.1.0",
+  "name": "@the-word-pse/cli",
+  "version": "0.1.2",
   "main": "index.js",
   "license": "MIT",
   "type": "module",

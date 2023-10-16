@@ -1,5 +1,5 @@
 {
-  "name": "the-word-server",
+  "name": "@the-word-pse/server",
   "version": "0.1.0",
   "main": "index.js",
   "license": "MIT",
