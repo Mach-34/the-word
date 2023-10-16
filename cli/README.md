@@ -12,40 +12,13 @@ A game to see how large a secret can grow before it becomes to big to keep!
 See subfolder's readmes for additional info on running yourslef (TODO)
 
 ## Installing the CLI
-Note: the installation instructions may be overly verbose for experienced CLI users. The instructions are meant to ensure non-technical users have a chance to use this repository.
-0. Install a version of Node >= 18, and install yarn
-1. Clone the repository
-```
-git clone https://github.com/Mach-34/the-word.git
-```
-2. Go to the cli directory
-```
-cd the-word/cli
-```
-3. Create a .env file with your preferred text editor (ex. nano)
-```
-nano .env
-```
-4. Inside this file, copy paste the following string
-```
-API=http://192.46.218.134:8000
-```
-5. Save the .env file (ex: nano)
-```
-CTRL+O
-CTRL+X
-```
-6. Install package dependencies and build the repository
-```
-yarn
-npx tsc
-```
-7. Link the built executable globally (would use yarn if we could but yarn link doesn't globally expose :/)
-```
-npm link
-```
-8. You should now be able to use the CLI. Running `the-word` should output something like
-```
+0. Requires Node & NPM. Built on Node v18.17.1
+
+1. Install the CLI with `npm i -g @the-word-pse/cli`
+
+2. Once the package has been installed and the executable linked, you should be able to access the command in your terminal: `the-word`
+```console
+# Output from running `the-word`
   _____ _           __        __            _ 
  |_   _| |__   ___  \ \      / /__  _ __ __| |
    | | | '_ \ / _ \  \ \ /\ / / _ \| '__/ _` |
@@ -57,35 +30,19 @@ Usage: cli [options] [command]
 A game to see how big a secret can become before it's too big to keep
 
 Options:
-  -V, --version                   output the version number
-  -h, --help                      display help for command
+  -V, --version                        output the version number
+  -h, --help                           display help for command
 
 Commands:
-  create <phrase> <username> <hint>    Create a new round with a secret phrase
-  get <round>                     Get information about a round
+  get <round>                          Get information about a round
   whisper <round> <phrase> <username>  Whisper a secret phrase
   shout <round> <phrase> <username>    Shout a secret phrase
-  help [command]                  display help for command
+  help [command]                       display help for command
+
 ```
 
 ## Using the CLI
-If you've followed the installation instructions, you can use the CLI to interact with the deployed app! The Word enables users to create secret phrases, whisper the solution to other's secret phrases and expand the secret's size, or shout the solution to end the round. Secrets are stored onchain, sometimes with a "prize" that is burned when a user shouts the solution. This app is *entirely gasless*.
-
-### Creating a new round
-To create a new game, run `the-word create <phrase> <username> <hint>`. The CLI will hash the secret phrase and generate a zk proof of knowledge of the secret phrase that creates that hash. Then, the CLI tells the server to start up a new round onchain. The CLI will return the round number which you can then share with others so that they can try to guess the secret!
- - "phrase": This is the secret phrase you want people to guess. It cannot be more than 180 UTF8 characters.
- - "username": This is an arbitrary username that is used to constrain the proof to a unique domain
- - "hint": Some text to help other users guess what your secret phrase is!
-
-Example:
-```
-the-word create \
-  "hunter2" \
-  "u53rn@m3" \
-  "hey, if you type in your pw, it will show as stars"
-```
-
-Note: The Word secrets have prizes attached to them which are burned to 0x00 when a solution is shouted. However, the current build does not provide metatransaction functionality needed to fund prizes from the CLI. This functionality will be figured out in the future, however persistent users can utilize the `fundPrize()` contract call *outside the CLI* if they really want to attach a prize to a secret phrase.
+The CLI points to a server running at `https://theword.mach34.space` linked to a smart contract at https://etherscan.io/address/0x0070a09d0c7a3c91806e6a3eff8c025a1324748c#code. You can use the CLI to interact with deployed rounds. If someone has told you the secret phrase for a given round, you can "whisper" or "shout" the phrase using the CLI. See below for more details.
 
 ### Whispering the solution to a round
 You can prove you know the solution to a secret without exposing the secret to others, you can "Whisper" the solution by running `the-word whisper <round> <phrase> <username>`. The CLI will hash the secret phrase and generate a zk proof of the secret phrase. The CLI then sends the proof to the server which checks the veracity of the proof and tracks you as a whisperer. No onchain action is taken at this point.
@@ -99,6 +56,7 @@ the-word whisper \
   "hunter2" \
   "u53rn@m3" \
 ```
+Whispering the solution from the CLI will also save the generated Groth16 proof of knowledge of the secret. You can share this file with others if you want to convince them you know the secret phrase!
 
 ### Shouting the solution to a round
 Instead of whispering a solution and "growing" the secret, you can end the round for everyone by shouting the solution publicly by running `the-word shout <round> <phrase> <username>`. The CLI will simply send off the solution to the server, which in turn will post the secret to the smart contract where it is hashed and compared to the commitment. If they're a match, the round ends and any prize attached to the round will be burned! Once a secret has been shouted, it is publicly known and users can no longer whisper the solution to grow the secret.
@@ -112,6 +70,7 @@ the-word shout \
   "hunter2" \
   "u53rn@m3" \
 ```
+The currently active round #1 (as of October 16, 2023) has .1 eth in it. While whispering the solution can have social benefits, you can choose to shout the solution, burn the .1 eth, and end the round for everyone!
 
 ### Retrieving round information
 You can retrieve information about a round by running `the word get <round>`. If the secret in a round is still *secret*, it will return a hint and the number of whisperers. If the secret has already been shouted, it will also return the secret phrase and the username of the user who shouted the solution.
@@ -119,7 +78,3 @@ Example:
 ```
 the-word get 1
 ```
-
-## Deployment info
-Sepolia deployment: https://sepolia.etherscan.io/address/0x20A02653367d7278eF5738311Cd2D82B91d7DcC1#code
-Sepolia Server: 192.46.218.134:8000 (set in cli's .env)
