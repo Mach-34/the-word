@@ -8,7 +8,7 @@
     "the-word": "./dest/main.js"
   },
   "scripts": {
-    "build": "npx tsc",
+    "build": "npx tsc && cp -r ./artifacts dest/artifacts",
     "test": "NODE_NO_WARNINGS=1 ts-node --esm ./src/test.ts",
     "play": "./scripts/the-word.sh",
     "circuits:crs": "./scripts/crs.sh",
@@ -30,5 +30,8 @@
     "dotenv": "^16.3.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
-  }
+  },
+  "files": [
+    "artifacts"
+  ]
 }
