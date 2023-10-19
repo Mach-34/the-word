@@ -78,7 +78,7 @@ export async function getRound(req: Request, res: Response) {
             secret: roundData.secret,
             hint: roundData.hint,
             prize: roundData.prize,
-            numWhispers: roundData.whisperers.length,
+            whisperers: roundData.whisperers.map((user: any) => user.username),
             shouter: roundData.shoutedBy
                 ? (roundData.shoutedBy as any).username
                 : undefined,
