@@ -22,11 +22,13 @@
   "dependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.4",
     "@nomicfoundation/hardhat-verify": "^1.1.1",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
     "chai": "^4.3.10",
     "circomlibjs": "^0.1.7",
     "dotenv": "^16.3.1",
     "ethers": "^6.7.1",
     "hardhat": "^2.17.4",
+    "hardhat-verify": "^1.0.0",
     "mocha": "^10.2.0",
     "snarkjs": "^0.7.1"
   }
