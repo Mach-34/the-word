@@ -193,9 +193,10 @@ async function getRound(round: string) {
         if (!data.active)
             console.log(`Secret: ${chalk.cyan(`"${data.secret}"`)}`);
         console.log(`Hint: ${chalk.cyan(data.hint)}`);
-        console.log(`Number of whispers: ${chalk.cyan(data.numWhispers)}`);
+        console.log(`Number of whispers: ${chalk.cyan(data.whispers.length)}`);
         if (!data.active)
             console.log(`Shouted by: ${chalk.cyan(data.shouter)}`);
+        console.log("WWW: ", data.whisperers);
         console.log(`=====================================`)
     }
 }
