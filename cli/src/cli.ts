@@ -193,10 +193,16 @@ async function getRound(round: string) {
         if (!data.active)
             console.log(`Secret: ${chalk.cyan(`"${data.secret}"`)}`);
         console.log(`Hint: ${chalk.cyan(data.hint)}`);
-        console.log(`Number of whispers: ${chalk.cyan(data.whispers.length)}`);
+        console.log(`Number of whispers: ${chalk.cyan(data.whisperers.length)}`);
         if (!data.active)
             console.log(`Shouted by: ${chalk.cyan(data.shouter)}`);
-        console.log("WWW: ", data.whisperers);
+        // build whisperer list
+        let whisperStr = "";
+        for (const whisperer of data.whisperers) {
+            whisperStr = `${whisperStr}, ${chalk.cyan(whisperer)}`;
+        }
+        whisperStr = whisperStr.slice(2);
+        console.log("Whisperers: ", whisperStr);
         console.log(`=====================================`)
     }
 }
