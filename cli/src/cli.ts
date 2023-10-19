@@ -234,7 +234,7 @@ async function whisper(round: string, phrase: string, username: string) {
 
     // format input
     const input: CircuitInput = engine.toInputs(phrase, username);
-    console.log("INPUT: ", input);
+
     // generate proof
     const { proof, publicSignals } = await engine.prove(input);
     const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
