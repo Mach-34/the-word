@@ -21,4 +21,4 @@ template the_word(num_felts) {
     hash <== hasher.out;
 }
 
-component main { public [username] } = the_word(6);
+component main { public [hash, username] } = the_word(6);
