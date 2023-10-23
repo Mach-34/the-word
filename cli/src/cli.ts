@@ -260,7 +260,7 @@ async function whisper(round: string, phrase: string, username: string) {
     // response
     console.log("=====================================")
     if (res.status != 201) {
-        console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
+        console.log(`${chalk.red("ERROR: ")} ${await res.text()}`);
     } else {
         // write proof to file
         const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
