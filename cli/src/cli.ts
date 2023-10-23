@@ -140,7 +140,7 @@ async function createRound(phrase: string, username: string, hint: string) {
 
     console.log("=====================================")
     if (res.status != 201) {
-        console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
+        console.log(`${chalk.red("ERROR: ")} ${await res.text()}`);
     } else {
         // write proof to file
         const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
@@ -244,7 +244,6 @@ async function whisper(round: string, phrase: string, username: string) {
 
     // generate proof
     const { proof, publicSignals } = await engine.prove(input);
-    const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
 
     // send to server
     const URL = `${API_URL}/whisper`;
@@ -253,7 +252,6 @@ async function whisper(round: string, phrase: string, username: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             round,
-            message: hash,
             username,
             proof,
         })
@@ -262,7 +260,7 @@ async function whisper(round: string, phrase: string, username: string) {
     // response
     console.log("=====================================")
     if (res.status != 201) {
-        console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
+        console.log(`${chalk.red("ERROR: ")} ${await res.text()}`);
     } else {
         // write proof to file
         const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");

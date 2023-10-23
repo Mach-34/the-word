@@ -1,6 +1,6 @@
 {
   "name": "@the-word-pse/cli",
-  "version": "0.1.13",
+  "version": "0.2.0",
   "main": "index.js",
   "license": "MIT",
   "type": "module",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "npx tsc && cp -r ./artifacts dest/artifacts",
-    "test": "NODE_NO_WARNINGS=1 ts-node --esm ./src/test.ts",
+    "local": "NODE_NO_WARNINGS=1 ts-node --esm ./src/cli.ts",
     "play": "./scripts/the-word.sh",
     "circuits:crs": "./scripts/crs.sh",
     "circuits:compile": "./scripts/compile-circuit.sh"
