@@ -64,6 +64,20 @@ async function main() {
             }
         });
 
+    // prove knowledge of an arbitrary secretphrase
+    program
+        .command("prove")
+        .argument("<phrase>", "The secret phrase to prove knowledge of and whisper")
+        .argument("<username>", "A unique username to associate this action with")
+        .description("Whisper a secret phrase")
+        .action(async (phrase, username) => {
+            // check args exist
+            if (!phrase || !username) {
+                console.log(`${chalk.red("ERROR: ")}must provide a phrase and username!`);
+                return;
+            }
+        });
+
     // shout solution command
     program
         .command("shout")
@@ -91,6 +105,8 @@ async function main() {
         await whisper(program.args[1], program.args[2], program.args[3]);
     } else if (program.args[0] == "shout") {
         await shout(program.args[1], program.args[2], program.args[3]);
+    } else if (program.args[0] == "prove") {
+        await prove(program.args[1], program.args[2]);
     }
 }
 
@@ -106,9 +122,9 @@ async function createRound(phrase: string, username: string, hint: string) {
     // get address
     console.log("=====================================")
     console.log("Creating a new round...")
-    console.log(`Secret Phrase: ${chalk.cyan(`"${phrase}"`)}`);
-    console.log(`Song hint: ${chalk.cyan(`"${hint}"`)}`);
-    console.log(`Username: ${chalk.cyan(username)}`);
+    console.log(`Secret Phrase: "${chalk.cyan(`${phrase}`)}"`);
+    console.log(`Song hint: "${chalk.cyan(`${hint}`)}"`);
+    console.log(`Username: "${chalk.cyan(username)}"`);
     // convert inputted song title to field elements
     if (phrase.length > 180) {
         console.log(`${chalk.red("ERROR: ")} a phrase cannot be more than 180 characters long`);
@@ -191,8 +207,8 @@ async function getRound(round: string) {
         console.log(`Is Active: ${chalk.cyan(data.active)}`);
         console.log(`Hash of secret: ${chalk.cyan(data.commitment)}`);
         if (!data.active)
-            console.log(`Secret: ${chalk.cyan(`"${data.secret}"`)}`);
-        console.log(`Hint: ${chalk.cyan(data.hint)}`);
+            console.log(`Secret: "${chalk.cyan(`${data.secret}`)}"`);
+        console.log(`Hint: "${chalk.cyan(data.hint)}"`);
         console.log(`Number of whispers: ${chalk.cyan(data.numWhispers)}`);
         if (!data.active)
             console.log(`Shouted by: ${chalk.cyan(data.shouter)}`);
@@ -220,8 +236,8 @@ async function whisper(round: string, phrase: string, username: string) {
     console.log("=====================================")
     console.log("Whispering solution for a round...")
     console.log(`Round number: ${chalk.cyan(round)}`);
-    console.log(`Secret Phrase: ${chalk.cyan(`"${phrase}"`)}`);
-    console.log(`Username: ${chalk.cyan(username)}`);
+    console.log(`Secret Phrase: "${chalk.cyan(`${phrase}`)}"`);
+    console.log(`Username: "${chalk.cyan(username)}"`);
 
     // convert inputted song title to field elements
     if (phrase.length > 180) {
@@ -272,6 +288,50 @@ async function whisper(round: string, phrase: string, username: string) {
 }
 
 /**
+ * Prove knowledge of an arbitrary secret phrase from TheWord cli
+ * Save the solution to the fs without interacting with remote resources
+ * 
+ * @param phrase - the secret phrase to prove knowledge of
+ * @param username - the username to associate this action with
+ */
+async function prove(phrase: string, username: string) {
+    // get address
+    console.log("=====================================")
+    console.log("Proving knowledge of a secret phrase...")
+    console.log(`Secret Phrase: ${chalk.cyan(`"${phrase}"`)}`);
+    console.log(`Username: "${chalk.cyan(username)}"`);
+
+    // convert inputted song title to field elements
+    if (phrase.length > 180) {
+        console.log(`${chalk.red("ERROR: ")} a phrase cannot be more than 180 characters long`);
+        return;
+    }
+
+    // initialize proving engine
+    const engine = await CircomEngine.init();
+
+    // format input
+    const input: CircuitInput = engine.toInputs(phrase, username);
+
+    // generate proof
+    const { proof, publicSignals } = await engine.prove(input);
+
+    // response
+    console.log("=====================================")
+    // write proof to file
+    const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
+    const filepath = `${pwd}/the-word-proof.json`;
+    const data = {
+        proof,
+        publicSignals,
+    };
+    fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+    console.log(`${chalk.green("SUCCESS: ")}Proof saved to ${chalk.cyan(filepath)}`);
+    console.log(``)
+    console.log("=====================================")
+}
+
+/**
  * Shout the solution to a secret phrase from TheWord cli
  * 
  * @param round - the round to shout solution for
@@ -291,8 +351,8 @@ async function shout(round: string, phrase: string, username: string) {
     console.log("=====================================")
     console.log("Shouting solution for a round...")
     console.log(`Round number: ${chalk.cyan(round)}`);
-    console.log(`Secret Phrase: ${chalk.cyan(`"${phrase}"`)}`);
-    console.log(`Username: ${chalk.cyan(username)}`);
+    console.log(`Secret Phrase: "${chalk.cyan(`"${phrase}`)}"`);
+    console.log(`Username: "${chalk.cyan(username)}"`);
 
     // send to server
     const URL = `${API_URL}/shout`;
