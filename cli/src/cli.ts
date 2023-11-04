@@ -156,7 +156,7 @@ async function createRound(phrase: string, username: string, hint: string) {
 
     console.log("=====================================")
     if (res.status != 201) {
-        console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
+        console.log(`${chalk.red("ERROR: ")} ${await res.text()}`);
     } else {
         // write proof to file
         const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
@@ -212,6 +212,13 @@ async function getRound(round: string) {
         console.log(`Number of whispers: ${chalk.cyan(data.numWhispers)}`);
         if (!data.active)
             console.log(`Shouted by: ${chalk.cyan(data.shouter)}`);
+        // build whisperer list
+        let whisperStr = "";
+        for (const whisperer of data.whisperers) {
+            whisperStr = `${whisperStr}, ${chalk.cyan(whisperer)}`;
+        }
+        whisperStr = whisperStr.slice(2);
+        console.log("Whisperers: ", whisperStr);
         console.log(`=====================================`)
     }
 }
@@ -253,7 +260,6 @@ async function whisper(round: string, phrase: string, username: string) {
 
     // generate proof
     const { proof, publicSignals } = await engine.prove(input);
-    const hash = `0x${BigInt(publicSignals[0]).toString(16)}`;
 
     // send to server
     const URL = `${API_URL}/whisper`;
@@ -262,7 +268,6 @@ async function whisper(round: string, phrase: string, username: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             round,
-            message: hash,
             username,
             proof,
         })
@@ -271,7 +276,7 @@ async function whisper(round: string, phrase: string, username: string) {
     // response
     console.log("=====================================")
     if (res.status != 201) {
-        console.log(`${chalk.red("ERROR: ")} ${await res.text()}}`);
+        console.log(`${chalk.red("ERROR: ")} ${await res.text()}`);
     } else {
         // write proof to file
         const pwd = execSync('pwd').toString().replace(/(\r\n|\n|\r)/gm, "");
