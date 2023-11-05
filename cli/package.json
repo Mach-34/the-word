@@ -1,6 +1,6 @@
 {
   "name": "@the-word-pse/cli",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "main": "index.js",
   "license": "MIT",
   "type": "module",
@@ -8,8 +8,8 @@
     "the-word": "./dest/main.js"
   },
   "scripts": {
-    "build": "npx tsc",
-    "test": "NODE_NO_WARNINGS=1 ts-node --esm ./src/test.ts",
+    "build": "npx tsc && cp -r ./artifacts dest/artifacts",
+    "local": "NODE_NO_WARNINGS=1 ts-node --esm ./src/cli.ts",
     "play": "./scripts/the-word.sh",
     "circuits:crs": "./scripts/crs.sh",
     "circuits:compile": "./scripts/compile-circuit.sh"
@@ -27,7 +27,6 @@
     "@types/figlet": "^1.5.6",
     "@types/node": "^20.8.2",
     "@types/snarkjs": "^0.7.3",
-    "dotenv": "^16.3.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }

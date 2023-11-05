@@ -1,10 +1,14 @@
 import { groth16, Groth16Proof } from "snarkjs";
 import { buildPoseidon, Poseidon } from "circomlibjs";
 import { convertTitleToFelts, usernameToBigint } from "./words.js";
-import vkey from "../artifacts/verifier.json" assert { type: "json" };
+import vkey from "./verifier.json" assert { type: "json" };
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const zkey = "src/artifacts/the_word.zkey";
-const wasm = "src/artifacts/the_word.wasm";
+// import from static artifacts
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ARTIFACTS_DIR = `${__dirname}/../artifacts`;
 
 type CircuitInput = {
     // secret phrase chunked into field elements
@@ -39,7 +43,11 @@ class CircomEngine {
     }
 
     async prove(input: CircuitInput): Promise<any> {
-        return await groth16.fullProve(input, wasm, zkey);
+        return await groth16.fullProve(
+            input,
+            `${ARTIFACTS_DIR}/the_word.wasm`,
+            `${ARTIFACTS_DIR}/the_word.zkey`
+        );
     }
 
     async verify(proof: any, publicSignals: any) : Promise<boolean> {

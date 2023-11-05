@@ -12,7 +12,8 @@ A game to see how large a secret can grow before it becomes to big to keep!
 See subfolder's readmes for additional info on running yourslef (TODO)
 
 ## Installing the CLI
-Note: the installation instructions may be overly verbose for experienced CLI users. The instructions are meant to ensure non-technical users have a chance to use this repository.
+SEE [./cli/README.md](./cli/README.md) for quick installation using the npm cli and published package.
+
 0. Install a version of Node >= 18, and install yarn
 1. Clone the repository
 ```

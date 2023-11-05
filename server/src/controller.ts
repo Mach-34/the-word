@@ -13,7 +13,7 @@ export async function createRound(req: Request, res: Response) {
     /// DISABLE THIS ENDPOINT UNTIL FURTHER NOTICE ///
     return res.status(403).send("Creation endpoint is currently disabled");
     //////////////////////////////////////////////////
-    // // message is the commitment to the round secret
+    // message is the commitment to the round secret
     // const { message, username, proof, hint } = req.body;
 
     // // convert the username into a bigint
@@ -78,7 +78,7 @@ export async function getRound(req: Request, res: Response) {
             secret: roundData.secret,
             hint: roundData.hint,
             prize: roundData.prize,
-            numWhispers: roundData.whisperers.length,
+            whisperers: roundData.whisperers.map((user: any) => user.username),
             shouter: roundData.shoutedBy
                 ? (roundData.shoutedBy as any).username
                 : undefined,
@@ -129,7 +129,7 @@ export async function getRounds(req: Request, res: Response) {
  */
 export async function whisper(req: Request, res: Response) {
     // get round, address, hash, and proof of knowledge of hash preimage
-    const { message, username, proof, round, address } = req.body;
+    const { username, proof, round } = req.body;
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round })
@@ -143,11 +143,14 @@ export async function whisper(req: Request, res: Response) {
         return;
     }
 
+    // get commitment from stored round
+    let commitment = roundData.commitment;
+
     // convert the username into a bigint
-    const usernameEncoded = usernameToBigint(username);
+    const usernameEncoded = `0x${BigInt(usernameToBigint(username)).toString(16)}`;
 
     // verify proof of knowledge of secret
-    const verified = await groth16.verify(vkey, [message, usernameEncoded], proof);
+    const verified = await groth16.verify(vkey, [commitment, usernameEncoded], proof);
     if (!verified) {
         res.status(400).send("Invalid proof");
         return;
