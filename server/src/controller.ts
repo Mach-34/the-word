@@ -88,6 +88,43 @@ export async function getRound(req: Request, res: Response) {
 }
 
 /**
+ * Get information about a all round rounds
+ */
+export async function getRounds(req: Request, res: Response) {
+    // attempt to retrieve all rounds from the database
+    const roundsData = await Round.find({})
+        .populate({
+            path: 'whisperers',
+            model: 'User',
+            select: 'username'
+        })
+        .populate({
+            path: 'shoutedBy',
+            model: 'User',
+            select: 'username'
+        });
+    if (!roundsData) {
+        res.status(404).send("Round does not exist");
+        return;
+    } else {
+        const formattedRoundsData = roundsData.map(round => ({
+            round: round.round,
+            // TODO: commitment: round.commitment
+            // TODO: secret: round.secret
+            hint: round.hint,
+            prize: round.prize,
+            numWhispers: round.whisperers.length,
+            // TODO: shouter: round.shoutedBy
+            //     ? (round.shoutedBy as any).username
+            //     : undefined,
+            // TODO: active: round.active
+
+        }));
+        res.status(200).json(formattedRoundsData);
+    }
+}
+
+/**
  * Whisper the solution to a round
  */
 export async function whisper(req: Request, res: Response) {

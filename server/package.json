@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "npx tsc",
-    "start": "NODE_NO_WARNINGS=1 yarn ts-node --esm src/index.ts"
+    "start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/index.ts"
   },
   "dependencies": {
     "@types/node": "^20.8.2",
