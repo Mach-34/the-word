@@ -10,6 +10,8 @@
     "start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/index.ts"
   },
   "dependencies": {
+    "@pcd/email-pcd": "^0.3.0",
+    "@pcd/util": "^0.2.0",
     "@types/node": "^20.8.2",
     "chalk": "^5.3.0",
     "circomlib": "^2.0.5",
@@ -19,8 +21,10 @@
     "ethers": "^6.7.1",
     "express": "^4.18.2",
     "figlet": "^1.6.0",
+    "iron-session": "^6.3.1",
     "mongoose": "^7.5.3",
-    "snarkjs": "^0.7.1"
+    "snarkjs": "^0.7.1",
+    "zuauth": "^0.3.0"
   },
   "devDependencies": {
     "@types/circomlibjs": "^0.1.3",

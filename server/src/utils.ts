@@ -112,3 +112,21 @@ export const generateProofAndCommitment = async (secret: string, usernameEncoded
     const commitment = F.toObject(poseidon(felts));
     return { message: commitment, proof };
 }
+
+// todo: strong typing
+export const formatRoundData = async (rounds: any[]) => {
+    return rounds.map(round => ({
+        round: round.round,
+        commitment: round.commitment,
+        secret: round.secret,
+        hint: round.hint,
+        prize: round.prize,
+        // @ts-ignore
+        whisperers: round.whisperers.map((whisperer) => whisperer.username),
+        shouter: round.shoutedBy
+            ? (round.shoutedBy as any).username
+            : undefined,
+        active: round.active
+
+    }));
+}

@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 /// USERS ///
 
 const UserSchema = new mongoose.Schema({
+    semaphoreId: {
+        type: String,
+        required: true,
+        unique: true
+    },
     username: {
         type: String,
         required: true,

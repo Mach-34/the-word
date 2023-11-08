@@ -1,9 +1,72 @@
 import { Request, Response } from 'express';
 import { groth16 } from 'snarkjs';
+import { formatRoundData } from './utils.js';
 import { buildPoseidon } from 'circomlibjs';
 import vkey from "./artifacts/verifier.json" assert { type: "json" };
 import { Round, User } from './schema.js';
 import { getContract, generateProofAndCommitment, convertTitleToFelts, usernameToBigint } from './utils.js';
+import { hexToBigInt, toHexString, getRandomValues } from '@pcd/util';
+import { EmailPCDPackage } from '@pcd/email-pcd';
+
+/**
+ * Get the nonce for the current watermark
+ */
+export async function getNonce(req: Request, res: Response) {
+    try {
+        req.session.nonce = hexToBigInt(
+            toHexString(getRandomValues(30))
+        ).toString();
+
+        await req.session.save();
+
+        res.status(200).send(req.session.nonce);
+    } catch (error) {
+        console.error(`[ERROR] ${error}`);
+        res.send(500);
+    }
+}
+
+/**
+ * Login with email pcd
+ */
+export async function login(req: Request, res: Response) {
+    try {
+        // First ensure that a PCD was provided
+        if (!req.body.pcd) {
+            console.error(`[ERROR] No pcd provided`);
+            res.status(400).send("No pcd provided");
+            return;
+        }
+
+        // deserialize email pcd
+        const pcd = await EmailPCDPackage.deserialize(req.body.pcd);
+
+        // Check that proof matches the claim
+        if (!(await EmailPCDPackage.verify(pcd))) {
+            console.error(`[ERROR] Email PCD is not valid`);
+            res.status(401).send(`Email PCD is not valid`);
+            return;
+        }
+
+        req.session.user = pcd.claim.semaphoreId;
+        await req.session.save();
+        res.status(200).send({
+            email: pcd.claim.emailAddress,
+        })
+    } catch (error: any) {
+        console.error(`[ERROR] ${error.message}`);
+        res.status(500).send(`Unknown error: ${error.message}`);
+    }
+}
+
+/**
+ * Destroy session made from pcd
+ */
+export async function logout(req: Request, res: Response) {
+    req.session.destroy();
+    res.status(200).send({ ok: true });
+}
+
 /**
  * Create a new round
  * @dev todo: add metatx functionality so a creator can add ether to the prize pool
@@ -87,7 +150,7 @@ export async function getRound(req: Request, res: Response) {
 }
 
 /**
- * Get information about a all round rounds
+ * Get information about a rounds
  */
 export async function getRounds(req: Request, res: Response) {
     // attempt to retrieve all rounds from the database
@@ -108,8 +171,8 @@ export async function getRounds(req: Request, res: Response) {
     } else {
         const formattedRoundsData = roundsData.map(round => ({
             round: round.round,
-            // TODO: commitment: round.commitment
-            // TODO: secret: round.secret
+            commitment: round.commitment,
+            secret: round.secret,
             hint: round.hint,
             prize: round.prize,
             // @ts-ignore
@@ -125,11 +188,59 @@ export async function getRounds(req: Request, res: Response) {
 }
 
 /**
+ * Get only the secrets a user has whispered. 
+ */
+export async function getWhispers(req: Request, res: Response) {
+    // get the user to look up whispers for
+    if (!req.session.user) {
+        res.status(401).send("Unauthorized");
+        return;
+    }
+    const semaphoreId = req.session.user;
+
+    // ensure the user exists
+    let user = await User.findOne({ semaphoreId });
+    if (!user) {
+        res.status(404).send("User does not exist");
+        return;
+    }
+
+    // get the rounds the user has whispered
+    const whisperRounds = await Round.find({ _id: { $in: user.whispers } })
+        .populate({
+            path: 'whisperers',
+            model: 'User',
+            select: 'username'
+        })
+        .populate({
+            path: 'shoutedBy',
+            model: 'User',
+            select: 'username'
+        });
+    const unknownRounds = await Round.find({ _id: { $nin: user.whispers } })
+        .populate({
+            path: 'whisperers',
+            model: 'User',
+            select: 'username'
+        })
+        .populate({
+            path: 'shoutedBy',
+            model: 'User',
+            select: 'username'
+        });
+    return res.status(200).json({
+        whispered: formatRoundData(whisperRounds),
+        unknown: formatRoundData(unknownRounds),
+    });
+}
+
+/**
  * Whisper the solution to a round
  */
 export async function whisper(req: Request, res: Response) {
     // get round, address, hash, and proof of knowledge of hash preimage
-    const { username, secret, round } = req.body;
+    // get semaphoreId to associate whispers with a zupass identity
+    const { semaphoreId, username, secret, round } = req.body;
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round })
@@ -162,7 +273,13 @@ export async function whisper(req: Request, res: Response) {
     // attempt to retrieve user or create if none exists
     let user = await User.findOne({ username });
     if (!user) {
-        user = await User.create({ username });
+        user = await User.create({ username, semaphoreId });
+    } else {
+        // check that user has not already whispered
+        if (roundData.whisperers.includes(user._id)) {
+            res.status(400).send(`User ${username} has already whispered to round ${round}`);
+            return;
+        }
     }
 
     // add whisperer to round
@@ -173,6 +290,46 @@ export async function whisper(req: Request, res: Response) {
 
     // return success
     res.status(201).json({});
+}
+
+/**
+ * Checks the validity of a proof without whispering or shouting (used to reissue PCD's)
+ */
+export async function checkProof(req: Request, res: Response) {
+    // get round, address, hash, and proof of knowledge of hash preimage
+    const { username, secret, round } = req.body;
+
+    // attempt to retrieve the round from the database
+    const roundData = await Round.findOne({ round })
+
+    // check that round is playable
+    if (!roundData) {
+        res.status(404).send(`Round ${round} does not exist`);
+        return;
+    } else if (!roundData.active) {
+        res.status(400).send(`Round ${round} is not active`);
+        return;
+    }
+
+    // get commitment from stored round
+    let commitment = roundData.commitment;
+
+    // convert the username into a bigint
+    const usernameEncoded = `0x${BigInt(usernameToBigint(username)).toString(16)}`;
+
+    // TODO: Generate proof on frontend
+    const { proof } = await generateProofAndCommitment(secret, usernameEncoded);
+
+    // verify proof of knowledge of secret
+    const verified = await groth16.verify(vkey, [commitment, usernameEncoded], proof);
+    if (verified) {
+        res.status(200).send({ ok: true });
+        return;
+
+    } else {
+        res.status(400).send("Invalid proof");
+        return;
+    }
 }
 
 /**
