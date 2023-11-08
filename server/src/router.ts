@@ -37,14 +37,14 @@ const router = express.Router();
 // get a new nonce for watermarking
 router.get("/auth/nonce", session, getNonce);
 
-router.get("/auth/login", session, login);
+router.post("/auth/login", session, login);
 
-router.get("/auth/logout", session, logout);
+router.post("/auth/logout", session, logout);
 
 /// THE WORD ///
 
 // create new game
-router.post("/create", session, createRound);
+router.post("/create", createRound);
 
 // get information about a round
 router.get("/round/:round", getRound);

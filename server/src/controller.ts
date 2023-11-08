@@ -163,7 +163,7 @@ export async function getRounds(req: Request, res: Response) {
         .populate({
             path: 'shoutedBy',
             model: 'User',
-            select: 'username'
+            select: ['username', 'semaphoreId']
         });
     if (!roundsData) {
         res.status(404).send("Round does not exist");
@@ -271,7 +271,7 @@ export async function whisper(req: Request, res: Response) {
     }
 
     // attempt to retrieve user or create if none exists
-    let user = await User.findOne({ username });
+    let user = await User.findOne({ semaphoreId });
     if (!user) {
         user = await User.create({ username, semaphoreId });
     } else {
