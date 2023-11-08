@@ -2,6 +2,11 @@ import "dotenv/config";
 import { Contract, ethers } from "ethers";
 import { Groth16Proof } from "snarkjs";
 import ABI from "./artifacts/abi.json" assert { type: "json" };
+import { groth16 } from "snarkjs";
+import { buildPoseidon } from "circomlibjs";
+
+const wasmPath = '../contracts/test/artifacts/the_word.wasm';
+const zkeyPath = '../contracts/test/artifacts/the_word.zkey';
 
 // Groth16 proof field elements formatted for solidity arguments
 export type SolidityGroth16Proof = {
@@ -93,4 +98,17 @@ export function usernameToBigint(username: string): bigint {
     // convert to bigint
     const hex = Buffer.from(encoded).toString('hex')
     return BigInt(`0x${hex}`) as bigint;
+}
+
+export const generateProofAndCommitment = async (secret: string, usernameEncoded: string) => {
+    const poseidon = await buildPoseidon();
+    const F = poseidon.F;
+    const { proof } = await groth16.fullProve(
+        { phrase: convertTitleToFelts(secret), username: usernameEncoded },
+        wasmPath,
+        zkeyPath
+    );
+    const felts = convertTitleToFelts(secret);
+    const commitment = F.toObject(poseidon(felts));
+    return { message: commitment, proof };
 }

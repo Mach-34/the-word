@@ -3,8 +3,7 @@ import { groth16 } from 'snarkjs';
 import { buildPoseidon } from 'circomlibjs';
 import vkey from "./artifacts/verifier.json" assert { type: "json" };
 import { Round, User } from './schema.js';
-import { getContract, formatProof, convertTitleToFelts, usernameToBigint } from './utils.js';
-
+import { getContract, generateProofAndCommitment, convertTitleToFelts, usernameToBigint } from './utils.js';
 /**
  * Create a new round
  * @dev todo: add metatx functionality so a creator can add ether to the prize pool
@@ -113,11 +112,12 @@ export async function getRounds(req: Request, res: Response) {
             // TODO: secret: round.secret
             hint: round.hint,
             prize: round.prize,
-            numWhispers: round.whisperers.length,
-            // TODO: shouter: round.shoutedBy
-            //     ? (round.shoutedBy as any).username
-            //     : undefined,
-            // TODO: active: round.active
+            // @ts-ignore
+            whisperers: round.whisperers.map((whisperer) => whisperer.username),
+            shouter: round.shoutedBy
+                ? (round.shoutedBy as any).username
+                : undefined,
+            active: round.active
 
         }));
         res.status(200).json(formattedRoundsData);
@@ -129,7 +129,7 @@ export async function getRounds(req: Request, res: Response) {
  */
 export async function whisper(req: Request, res: Response) {
     // get round, address, hash, and proof of knowledge of hash preimage
-    const { username, proof, round } = req.body;
+    const { username, secret, round } = req.body;
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round })
@@ -148,6 +148,9 @@ export async function whisper(req: Request, res: Response) {
 
     // convert the username into a bigint
     const usernameEncoded = `0x${BigInt(usernameToBigint(username)).toString(16)}`;
+
+    // TODO: Generate proof on frontend
+    const { proof } = await generateProofAndCommitment(secret, usernameEncoded);
 
     // verify proof of knowledge of secret
     const verified = await groth16.verify(vkey, [commitment, usernameEncoded], proof);
@@ -177,7 +180,7 @@ export async function whisper(req: Request, res: Response) {
  */
 export async function shout(req: Request, res: Response) {
     // get round, address, and secret
-    const { round, message, username } = req.body;
+    const { round, secret: message, username } = req.body;
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round });
@@ -201,9 +204,9 @@ export async function shout(req: Request, res: Response) {
     }
 
     // shout solution in smart contract
-    const contract = await getContract();
-    const tx = await contract.shout(round, message, username);
-    await tx.wait();
+    // const contract = await getContract();
+    // const tx = await contract.shout(round, message, username);
+    // await tx.wait();
 
     // attempt to retrieve user or create if none exists
     let user = await User.findOne({ username });

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "npx tsc",
+    "create-round": "node --no-warnings=ExperimentalWarning --loader ts-node/esm scripts/createRound.ts",
     "start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/index.ts"
   },
   "dependencies": {
