@@ -9,7 +9,7 @@ import https from 'https';
 
 const app: Express = express();
 
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3004', credentials: true }));
 app.use(express.json());
 app.use('/artifacts', express.static('src/artifacts'));
 app.use(router);

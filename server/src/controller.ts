@@ -48,10 +48,14 @@ export async function login(req: Request, res: Response) {
             return;
         }
 
-        req.session.user = pcd.claim.semaphoreId;
+        req.session.user = {
+            email: pcd.claim.emailAddress,
+            semaphoreId: pcd.claim.semaphoreId
+        };
         await req.session.save();
         res.status(200).send({
             email: pcd.claim.emailAddress,
+            semaphoreId: pcd.claim.semaphoreId
         })
     } catch (error: any) {
         console.error(`[ERROR] ${error.message}`);
@@ -135,16 +139,16 @@ export async function getRound(req: Request, res: Response) {
         return;
     } else {
         res.status(200).json({
-            round: roundData.round,
+            active: roundData.active,
             commitment: roundData.commitment,
-            secret: roundData.secret,
             hint: roundData.hint,
+            round: roundData.round,
             prize: roundData.prize,
-            whisperers: roundData.whisperers.map((user: any) => user.username),
+            secret: roundData.secret,
             shouter: roundData.shoutedBy
                 ? (roundData.shoutedBy as any).username
                 : undefined,
-            active: roundData.active
+            whisperers: roundData.whisperers.map((user: any) => user.username),
         });
     }
 }
@@ -153,6 +157,7 @@ export async function getRound(req: Request, res: Response) {
  * Get information about a rounds
  */
 export async function getRounds(req: Request, res: Response) {
+    const { semaphoreId: userSemaphoreId } = req.session?.user ?? {};
     // attempt to retrieve all rounds from the database
     const roundsData = await Round.find({})
         .populate({
@@ -163,26 +168,33 @@ export async function getRounds(req: Request, res: Response) {
         .populate({
             path: 'shoutedBy',
             model: 'User',
-            select: ['username', 'semaphoreId']
+            select: 'username'
         });
     if (!roundsData) {
         res.status(404).send("Round does not exist");
         return;
     } else {
-        const formattedRoundsData = roundsData.map(round => ({
-            round: round.round,
-            commitment: round.commitment,
-            secret: round.secret,
-            hint: round.hint,
-            prize: round.prize,
-            // @ts-ignore
-            whisperers: round.whisperers.map((whisperer) => whisperer.username),
-            shouter: round.shoutedBy
-                ? (round.shoutedBy as any).username
-                : undefined,
-            active: round.active
+        const formattedRoundsData = roundsData.map(round => {
+            const whisperers = round.whisperers.map(({ username }: any) => username);
+            const userInteractions = {
+                shouted: round.shoutedBy ? (round.shoutedBy as any).semaphoreId === userSemaphoreId : false,
+                whispered: !!round.whisperers.find(({ semaphoreId }: any) => semaphoreId === userSemaphoreId)
+            };
 
-        }));
+            return {
+                active: round.active,
+                commitment: round.commitment,
+                hint: round.hint,
+                prize: round.prize,
+                round: round.round,
+                secret: round.secret,
+                shouter: round.shoutedBy
+                    ? (round.shoutedBy as any).username
+                    : undefined,
+                userInteractions,
+                whisperers,
+            }
+        });
         res.status(200).json(formattedRoundsData);
     }
 }
@@ -191,12 +203,14 @@ export async function getRounds(req: Request, res: Response) {
  * Get only the secrets a user has whispered. 
  */
 export async function getWhispers(req: Request, res: Response) {
+    const { round: semaphoreId } = req.params;
+
     // get the user to look up whispers for
-    if (!req.session.user) {
-        res.status(401).send("Unauthorized");
-        return;
-    }
-    const semaphoreId = req.session.user;
+    // if (!req.session.user) {
+    //     res.status(401).send("Unauthorized");
+    //     return;
+    // }
+    // const semaphoreId = req.session.user;
 
     // ensure the user exists
     let user = await User.findOne({ semaphoreId });
@@ -235,16 +249,27 @@ export async function getWhispers(req: Request, res: Response) {
 }
 
 /**
+ * Restore user session
+ */
+export async function restoreSession(req: Request, res: Response) {
+    if (req.session.user) {
+        res.status(200).send(req.session.user);
+    } else {
+        res.status(200).send({ msg: 'Session not found' })
+    }
+}
+
+/**
  * Whisper the solution to a round
  */
 export async function whisper(req: Request, res: Response) {
     // get round, address, hash, and proof of knowledge of hash preimage
     // get semaphoreId to associate whispers with a zupass identity
-    const { semaphoreId, username, secret, round } = req.body;
+    const { username, secret, round } = req.body;
+    const { semaphoreId } = req.session?.user ?? {};
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round })
-
     // check that round is playable
     if (!roundData) {
         res.status(404).send(`Round ${round} does not exist`);
@@ -262,14 +287,12 @@ export async function whisper(req: Request, res: Response) {
 
     // TODO: Generate proof on frontend
     const { proof } = await generateProofAndCommitment(secret, usernameEncoded);
-
     // verify proof of knowledge of secret
     const verified = await groth16.verify(vkey, [commitment, usernameEncoded], proof);
     if (!verified) {
         res.status(400).send("Invalid proof");
         return;
     }
-
     // attempt to retrieve user or create if none exists
     let user = await User.findOne({ semaphoreId });
     if (!user) {
@@ -338,6 +361,7 @@ export async function checkProof(req: Request, res: Response) {
 export async function shout(req: Request, res: Response) {
     // get round, address, and secret
     const { round, secret: message, username } = req.body;
+    const { semaphoreId } = req.session?.user ?? {};
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round });
@@ -366,9 +390,9 @@ export async function shout(req: Request, res: Response) {
     // await tx.wait();
 
     // attempt to retrieve user or create if none exists
-    let user = await User.findOne({ username });
+    let user = await User.findOne({ semaphoreId });
     if (!user) {
-        user = await User.create({ username });
+        user = await User.create({ semaphoreId });
     }
 
     // update round in db

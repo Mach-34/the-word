@@ -10,13 +10,18 @@ import {
     logout,
     checkProof,
     getWhispers,
+    restoreSession,
 } from './controller.js';
 import { ironSession } from "iron-session/express";
+import 'dotenv/config';
 
 declare module "iron-session" {
     interface IronSessionData {
         nonce?: string;
-        user?: string;
+        user?: {
+            email: string;
+            semaphoreId: string;
+        };
     }
 }
 
@@ -41,6 +46,8 @@ router.post("/auth/login", session, login);
 
 router.post("/auth/logout", session, logout);
 
+router.get("/auth/restore-session", session, restoreSession);
+
 /// THE WORD ///
 
 // create new game
@@ -50,10 +57,10 @@ router.post("/create", createRound);
 router.get("/round/:round", getRound);
 
 // get all rounds
-router.get("/rounds", getRounds);
+router.get("/rounds", session, getRounds);
 
 // get rounds sorted into whispered and not whispered
-router.get("/rounds/sorted", session, getWhispers);
+router.get("/rounds/sorted/:user", session, getWhispers);
 
 // whisper solution to a round
 router.post("/whisper", session, whisper);
