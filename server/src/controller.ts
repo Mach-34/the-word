@@ -48,14 +48,19 @@ export async function login(req: Request, res: Response) {
             return;
         }
 
+        // Check if user exists in DB and if so then fetch associated username if there is one
+        const user = await User.findOne({ semaphoreId: pcd.claim.semaphoreId });
+
         req.session.user = {
             email: pcd.claim.emailAddress,
-            semaphoreId: pcd.claim.semaphoreId
+            semaphoreId: pcd.claim.semaphoreId,
+            username: user?.username
         };
         await req.session.save();
         res.status(200).send({
             email: pcd.claim.emailAddress,
-            semaphoreId: pcd.claim.semaphoreId
+            semaphoreId: pcd.claim.semaphoreId,
+            username: user?.username
         })
     } catch (error: any) {
         console.error(`[ERROR] ${error.message}`);
@@ -163,12 +168,12 @@ export async function getRounds(req: Request, res: Response) {
         .populate({
             path: 'whisperers',
             model: 'User',
-            select: 'username'
+            select: ['username', 'semaphoreId']
         })
         .populate({
             path: 'shoutedBy',
             model: 'User',
-            select: 'username'
+            select: ['username', 'semaphoreId']
         });
     if (!roundsData) {
         res.status(404).send("Round does not exist");
@@ -177,10 +182,9 @@ export async function getRounds(req: Request, res: Response) {
         const formattedRoundsData = roundsData.map(round => {
             const whisperers = round.whisperers.map(({ username }: any) => username);
             const userInteractions = {
-                shouted: round.shoutedBy ? (round.shoutedBy as any).semaphoreId === userSemaphoreId : false,
-                whispered: !!round.whisperers.find(({ semaphoreId }: any) => semaphoreId === userSemaphoreId)
+                shouted: round.shoutedBy ? !!userSemaphoreId && (round.shoutedBy as any).semaphoreId === userSemaphoreId : false,
+                whispered: !!round.whisperers.find(({ semaphoreId }: any) => !!userSemaphoreId && semaphoreId === userSemaphoreId)
             };
-
             return {
                 active: round.active,
                 commitment: round.commitment,

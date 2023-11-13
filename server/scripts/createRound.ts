@@ -8,11 +8,11 @@ import mongoose from 'mongoose';
 
 (async () => {
 
-    const hint = 'Two phrase';
-    const prize = 4.02;
-    const round = 2;
-    const secret = 'Phrase2'
-    const username = 'Name2';
+    const hint = 'Four phrase';
+    const prize = 2.34;
+    const round = 4;
+    const secret = 'Phrase4'
+    const username = 'Name4';
 
     const usernameEncoded = `0x${BigInt(usernameToBigint(username)).toString(16)}`;;
 

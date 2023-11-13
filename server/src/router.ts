@@ -21,6 +21,7 @@ declare module "iron-session" {
         user?: {
             email: string;
             semaphoreId: string;
+            username?: string;
         };
     }
 }
@@ -69,6 +70,6 @@ router.post("/whisper", session, whisper);
 router.post("/shout", session, shout);
 
 // check a proof without submitting it for whisper/ shouting
-router.post("/veirfy", checkProof);
+router.post("/verify", checkProof);
 
 export default router;
