@@ -349,7 +349,7 @@ export async function checkProof(req: Request, res: Response) {
     // verify proof of knowledge of secret
     const verified = await groth16.verify(vkey, [commitment, usernameEncoded], proof);
     if (verified) {
-        res.status(200).send({ ok: true, shouted: roundData.active });
+        res.status(200).send({ ok: true, shouted: !roundData.active });
         return;
 
     } else {
