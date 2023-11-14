@@ -269,8 +269,12 @@ export async function restoreSession(req: Request, res: Response) {
 export async function whisper(req: Request, res: Response) {
     // get round, address, hash, and proof of knowledge of hash preimage
     // get semaphoreId to associate whispers with a zupass identity
-    const { username, secret, round } = req.body;
-    const { semaphoreId } = req.session?.user ?? {};
+    if (!req.session.user) {
+        res.status(401).send("Unauthorized");
+        return;
+    }
+    const { proof, round, username } = req.body;
+    const { semaphoreId } = req.session.user;
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round })
@@ -289,8 +293,6 @@ export async function whisper(req: Request, res: Response) {
     // convert the username into a bigint
     const usernameEncoded = `0x${BigInt(usernameToBigint(username)).toString(16)}`;
 
-    // TODO: Generate proof on frontend
-    const { proof } = await generateProofAndCommitment(secret, usernameEncoded);
     // verify proof of knowledge of secret
     const verified = await groth16.verify(vkey, [commitment, usernameEncoded], proof);
     if (!verified) {
@@ -300,7 +302,7 @@ export async function whisper(req: Request, res: Response) {
     // attempt to retrieve user or create if none exists
     let user = await User.findOne({ semaphoreId });
     if (!user) {
-        user = await User.create({ username, semaphoreId });
+        user = await User.create({ semaphoreId, username });
     } else {
         // check that user has not already whispered
         if (roundData.whisperers.includes(user._id)) {
@@ -324,7 +326,7 @@ export async function whisper(req: Request, res: Response) {
  */
 export async function checkProof(req: Request, res: Response) {
     // get round, address, hash, and proof of knowledge of hash preimage
-    const { username, secret, round } = req.body;
+    const { proof, round, username } = req.body;
 
     // attempt to retrieve the round from the database
     const roundData = await Round.findOne({ round })
@@ -344,13 +346,10 @@ export async function checkProof(req: Request, res: Response) {
     // convert the username into a bigint
     const usernameEncoded = `0x${BigInt(usernameToBigint(username)).toString(16)}`;
 
-    // TODO: Generate proof on frontend
-    const { proof } = await generateProofAndCommitment(secret, usernameEncoded);
-
     // verify proof of knowledge of secret
     const verified = await groth16.verify(vkey, [commitment, usernameEncoded], proof);
     if (verified) {
-        res.status(200).send({ ok: true });
+        res.status(200).send({ ok: true, shouted: roundData.active });
         return;
 
     } else {
@@ -396,7 +395,7 @@ export async function shout(req: Request, res: Response) {
     // attempt to retrieve user or create if none exists
     let user = await User.findOne({ semaphoreId });
     if (!user) {
-        user = await User.create({ semaphoreId });
+        user = await User.create({ semaphoreId, username });
     }
 
     // update round in db
